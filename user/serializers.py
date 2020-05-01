@@ -38,3 +38,13 @@ class TokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccessToken
         fields = ('token',)
+
+
+class FillBalanceSerializer(serializers.Serializer):
+    balance = serializers.CharField()
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'balance')

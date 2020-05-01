@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'djmoney',
     'rest_framework_swagger',
+    'drf_yasg',
 
     # Apps
     'user',
@@ -148,7 +149,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
+        'user.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     # 'DEFAULT_FILTER_BACKENDS': (
@@ -172,6 +173,30 @@ REST_FRAMEWORK = {
 # CORS_ORIGIN_WHITELIST = ['http://localhost:3000']
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+
+PIASTRIX_CONFIG = {
+    'SHOP_SECRET': 'rpqo43hP6YWZVHLp',
+    'SHOP_ID': 3799,
+    'BASE_URL': 'https://pay.piastrix.com/ru/pay'
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Token': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization'
+        }
+    },
+    'SHOW_REQUEST_HEADERS': True,
+    'JSON_EDITOR': True,
+    'USE_SESSION_AUTH': False,
+    'api_key': 'Token ae739f0f7b96f79322d00745aaee439ea63c75acfff088c4b5e11a0ee1b578da',
+    'is_authenticated': False,
+    'is_superuser': False,
+    'api_path': "/api/v1/"
+}
 
 try:
     from .settings_local import *

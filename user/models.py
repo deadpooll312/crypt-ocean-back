@@ -29,3 +29,19 @@ class AccessToken(models.Model):
 
     def __str__(self):
         return self.token
+
+
+class UserBalanceFilRecord(models.Model):
+    class Meta:
+        verbose_name_plural = 'История пополнения баланса'
+        verbose_name = 'Элемент истории'
+
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE, verbose_name='Пользователь')
+    amount = models.CharField(max_length=255, verbose_name='Сумма пополнения')
+    currency = models.CharField(max_length=255, verbose_name='Валюта')
+
+    is_success = models.BooleanField(default=False, verbose_name='Успешно пополнено!')
+    error_message = models.TextField(verbose_name='Текст ошибки', null=True, blank=True)
+
+    def __str__(self):
+        return self.amount
