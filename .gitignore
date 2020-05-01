@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# virtualenv
+.venv
+venv/
+ENV/
+
+# dotenv
+.env
+
+/.idea
+*.sqlite3
+
+media
+static
+*.sqlite3
+settings_local.py
+
+node_modules/
+package-lock.json
+# Django stuff:
+*.log
+.sock
+.DS_Store
+*/.DS_Store
+*.save
+yarn.lock
+yarn-error.log
+*.swp
