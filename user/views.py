@@ -123,18 +123,31 @@ class FillBalanceAPIView(generics.CreateAPIView):
         shop_order_id = self.record.id
         shop_secret = settings.PIASTRIX_CONFIG.get('SHOP_SECRET')
 
-        sign_string = f'{amount}:{currency}:{shop_id}:{shop_order_id}{shop_secret}'
+        sign_string = f'{amount}:{currency}:card_rub:{shop_id}:{shop_order_id}{shop_secret}'
 
         return sha256(sign_string.encode()).hexdigest()
 
     def send_payment_creation_request(self, sign):
-        return {
-            'url': settings.PIASTRIX_CONFIG.get('BASE_URL'),
-            'data': {
-                'amount': self.record.amount,
-                'currency': self.record.currency,
-                'shop_id': settings.PIASTRIX_CONFIG.get('SHOP_ID'),
-                'sign': sign,
-                'shop_order_id': self.record.id,
-            }
+        # return {
+        #     'url': settings.PIASTRIX_CONFIG.get('BASE_URL'),
+        #     'data': {
+        #         'amount': self.record.amount,
+        #         'currency': self.record.currency,
+        #         'shop_id': settings.PIASTRIX_CONFIG.get('SHOP_ID'),
+        #         'sign': sign,
+        #         'shop_order_id': self.record.id,
+        #         'payway': 'card_rub'
+        #     }
+        # }
+        data = {
+            'amount': self.record.amount,
+            'currency': self.record.currency,
+            'shop_id': settings.PIASTRIX_CONFIG.get('SHOP_ID'),
+            'sign': sign,
+            'shop_order_id': self.record.id,
+            'payway': 'card_rub',
+            'description': 'Test invoice'
         }
+        response = requests.post(settings.PIASTRIX_CONFIG.get('BASE_URL'), json=data)
+        return response.json()
+

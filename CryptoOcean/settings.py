@@ -178,7 +178,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 PIASTRIX_CONFIG = {
     'SHOP_SECRET': 'rpqo43hP6YWZVHLp',
     'SHOP_ID': 3799,
-    'BASE_URL': 'https://pay.piastrix.com/ru/pay'
+    'BASE_URL': 'https://core.piastrix.com/invoice/create'
 }
 
 SWAGGER_SETTINGS = {
