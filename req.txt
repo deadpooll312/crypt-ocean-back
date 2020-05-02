@@ -8,6 +8,7 @@ coreschema==0.0.4
 decorator==4.4.2
 Django==2.2.7
 django-cors-headers==3.2.1
+django-jet==1.0.8
 django-money==0.15.1
 django-rest-swagger==2.0.0a0
 djangorestframework==3.11.0
