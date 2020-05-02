@@ -3,6 +3,7 @@ from typing import Optional
 import requests
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from rest_framework import generics, status, views, exceptions
@@ -13,6 +14,7 @@ from .models import User, AccessToken, UserBalanceFilRecord
 from .permissions import IsAuthenticated
 from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer
 from hashlib import sha256
+from djmoney.money import Money
 
 
 # Create your views here.
@@ -137,7 +139,6 @@ class FillBalanceAPIView(generics.CreateAPIView):
             'shop_order_id': self.record.id,
             'payway': 'card_rub',
         }
-        data.update(self.get_callback_urls())
         response = requests.post(settings.PIASTRIX_CONFIG.get('BASE_URL'), json=data)
         return response.json()
 
@@ -156,5 +157,24 @@ class FillBalanceAPIView(generics.CreateAPIView):
 class FillBalanceSuccessCallbackAPIView(views.APIView):
 
     def get(self, *args, **kwargs):
-        print(self.request.query_params)
-        return Response()
+        record_id = self.request.query_params.get('shop_order_id', None)
+
+        if not record_id:
+            return HttpResponseRedirect(reverse('user:balance_fill_failure'))
+
+        try:
+            record = UserBalanceFilRecord.objects.get(id=record_id)
+        except UserBalanceFilRecord.DoesNotExist:
+            return HttpResponseRedirect(reverse('user:balance_fill_failure'))
+
+        record.is_success = False
+        record.user.balance = record.user.balance + Money(record.amount, 'RUB')
+        record.user.save()
+
+        return HttpResponseRedirect(f'{settings.FRONTEND_URL}/balance/fill/success/')
+
+
+class FillBalanceFailureCallbackAPIView(views.APIView):
+
+    def get(self, *args, **kwargs):
+        return HttpResponseRedirect(f'{settings.FRONTEND_URL}/balance/fill/failure/')

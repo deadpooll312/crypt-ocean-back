@@ -198,6 +198,8 @@ SWAGGER_SETTINGS = {
     'api_path': "/api/v1/"
 }
 
+FRONTEND_URL = 'http://w.beeyonance.exchange'
+
 try:
     from .settings_local import *
 except ImportError:

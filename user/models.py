@@ -16,7 +16,7 @@ class User(AbstractUser):
     username = models.CharField(max_length=255, unique=False, null=True, blank=True, verbose_name='Имя пользователя')
     email = models.EmailField(unique=True, verbose_name='E-Mail')
 
-    balance = MoneyField(max_digits=14, decimal_places=2, default_currency='USD', default=0)
+    balance = MoneyField(max_digits=14, decimal_places=2, default_currency='RUB', default=0)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
