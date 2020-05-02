@@ -159,15 +159,17 @@ class FillBalanceSuccessCallbackAPIView(views.APIView):
     def get(self, *args, **kwargs):
         record_id = self.request.query_params.get('shop_order_id', None)
 
+        failure_path = reverse('user:balance_fill_failure')
+
         if not record_id:
-            return HttpResponseRedirect(reverse('user:balance_fill_failure'))
+            return HttpResponseRedirect(f'{failure_path}?reason=record_pk_absent')
 
         try:
             record = UserBalanceFilRecord.objects.get(id=record_id)
         except UserBalanceFilRecord.DoesNotExist:
-            return HttpResponseRedirect(reverse('user:balance_fill_failure'))
+            return HttpResponseRedirect(f'{failure_path}?reason=record_not_found')
 
-        record.is_success = False
+        record.is_success = True
         record.user.balance = record.user.balance + Money(record.amount, 'RUB')
         record.user.save()
 
