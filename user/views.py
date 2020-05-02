@@ -9,7 +9,7 @@ from django.urls import reverse
 from rest_framework import generics, status, views, exceptions
 from rest_framework.response import Response
 
-from BeefreeBingo import settings
+from BefreeBingo import settings
 from .models import User, AccessToken, UserBalanceFilRecord
 from .permissions import IsAuthenticated
 from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer

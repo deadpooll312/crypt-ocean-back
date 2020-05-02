@@ -1,4 +1,4 @@
-"""BeefreeBingo URL Configuration
+"""BefreeBingo URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/3.0/topics/http/urls/
@@ -19,11 +19,11 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
 
-from BeefreeBingo import settings
+from BefreeBingo import settings
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="BeefreeBingo API",
+        title="BefreeBingo API",
         default_version='v1',
         description="API Documentation",
         terms_of_service="https://www.google.com/policies/terms/",

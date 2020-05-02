@@ -1,5 +1,5 @@
 """
-WSGI config for BeefreeBingo project.
+WSGI config for BefreeBingo project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'BeefreeBingo.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'BefreeBingo.settings')
 
 application = get_wsgi_application()
