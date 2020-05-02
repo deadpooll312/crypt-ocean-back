@@ -26,12 +26,12 @@ schema_view = get_schema_view(
         title="BefreeBingo API",
         default_version='v1',
         description="API Documentation",
-        terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="contact@snippets.local"),
-        license=openapi.License(name="BSD License"),
+        # terms_of_service="https://www.google.com/policies/terms/",
+        # contact=openapi.Contact(email="contact@snippets.local"),
+        # license=openapi.License(name="BSD License"),
     ),
     public=True,
-    permission_classes=(permissions.AllowAny,),
+    # permission_classes=(permissions.AllowAny,),
 )
 
 urlpatterns = [
@@ -40,6 +40,7 @@ urlpatterns = [
     path('api/', include([
         path('v1/', include([
             path('auth/', include(('user.urls', 'user'))),
+            path('bets/', include(('bets.urls', 'bets')))
         ])),
     ]))
 ]

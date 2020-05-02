@@ -1,6 +1,6 @@
 from rest_framework import serializers, exceptions
 
-from user.models import User, AccessToken
+from user.models import User, AccessToken, UserBalanceFilRecord
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -48,3 +48,9 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'balance')
+
+
+class UserBalanceFillRecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserBalanceFilRecord
+        fields = ('amount', 'currency', 'is_success', 'created_at')

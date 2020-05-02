@@ -47,6 +47,7 @@ INSTALLED_APPS = [
 
     # Apps
     'user',
+    'bets',
 ]
 
 MIDDLEWARE = [

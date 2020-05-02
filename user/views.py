@@ -4,7 +4,6 @@ import requests
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
 from django.urls import reverse
 from rest_framework import generics, status, views, exceptions
 from rest_framework.response import Response
@@ -12,7 +11,9 @@ from rest_framework.response import Response
 from BefreeBingo import settings
 from .models import User, AccessToken, UserBalanceFilRecord
 from .permissions import IsAuthenticated
-from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer
+from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer
+from bets.serializers import BetSerializer
+from bets.models import Bet
 from hashlib import sha256
 from djmoney.money import Money
 
@@ -155,6 +156,7 @@ class FillBalanceAPIView(generics.CreateAPIView):
 
 
 class FillBalanceSuccessCallbackAPIView(views.APIView):
+    swagger_schema = None
 
     def get(self, *args, **kwargs):
         record_id = self.request.query_params.get('shop_order_id', None)
@@ -177,6 +179,25 @@ class FillBalanceSuccessCallbackAPIView(views.APIView):
 
 
 class FillBalanceFailureCallbackAPIView(views.APIView):
+    swagger_schema = None
 
     def get(self, *args, **kwargs):
         return HttpResponseRedirect(f'{settings.FRONTEND_URL}/balance/fill/failure/')
+
+
+class UserFillHistoryAPIView(generics.ListAPIView):
+
+    permission_classes = (IsAuthenticated,)
+    serializer_class = UserBalanceFillRecordSerializer
+
+    def get_queryset(self):
+        return UserBalanceFilRecord.objects.filter(user=self.request.user)
+
+
+class UserBetsHistoryApiView(generics.ListAPIView):
+
+    permission_classes = (IsAuthenticated,)
+    serializer_class = BetSerializer
+
+    def get_queryset(self):
+        return Bet.objects.select_related('coefficient').filter(user=self.request.user)

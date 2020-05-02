@@ -2,6 +2,7 @@ from secrets import token_hex
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 from djmoney.models.fields import MoneyField
 
 
@@ -13,7 +14,7 @@ class User(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
-    username = models.CharField(max_length=255, unique=False, null=True, blank=True, verbose_name='Имя пользователя')
+    username = models.CharField(max_length=255, unique=False, blank=True, verbose_name='Имя пользователя', default='')
     email = models.EmailField(unique=True, verbose_name='E-Mail')
 
     balance = MoneyField(max_digits=14, decimal_places=2, default_currency='RUB', default=0)
@@ -42,6 +43,8 @@ class UserBalanceFilRecord(models.Model):
 
     is_success = models.BooleanField(default=False, verbose_name='Успешно пополнено!')
     error_message = models.TextField(verbose_name='Текст ошибки', null=True, blank=True)
+
+    created_at = models.DateTimeField(verbose_name='Дата создания', auto_now_add=True)
 
     def __str__(self):
         return self.amount
