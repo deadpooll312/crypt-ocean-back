@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'jet',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -200,6 +201,9 @@ SWAGGER_SETTINGS = {
 }
 
 FRONTEND_URL = 'http://w.beeyonance.exchange'
+
+JET_SIDE_MENU_COMPACT = True
+
 
 try:
     from .settings_local import *
