@@ -18,6 +18,7 @@ from django.urls import path, include
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
+from bets.views import IndexView
 
 from BefreeBingo import settings
 
@@ -43,7 +44,9 @@ urlpatterns = [
             path('auth/', include(('user.urls', 'user'))),
             path('bets/', include(('bets.urls', 'bets')))
         ])),
-    ]))
+    ])),
+
+    path('', IndexView.as_view(), name='index')
 ]
 
 if settings.DEBUG:

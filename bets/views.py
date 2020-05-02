@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.views import generic
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
@@ -10,6 +10,10 @@ from .models import Coefficient
 from bets.serializers import BetCreationSerializer, BetSerializer
 
 # Create your views here.
+
+
+class IndexView(generic.TemplateView):
+    template_name = 'coming-soon.html'
 
 
 class CoefficientListAPIView(generics.ListAPIView):
