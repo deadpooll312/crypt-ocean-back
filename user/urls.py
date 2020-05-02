@@ -6,5 +6,7 @@ urlpatterns = [
     path('sign-in/', views.RestAuthAPIView.as_view(), name='sign_in'),
     path('me/', views.GetProfileAPIView.as_view(), name='get_profile'),
 
-    path('balance/fill/', views.FillBalanceAPIView.as_view(), name='balance_fill')
+    path('balance/fill/', views.FillBalanceAPIView.as_view(), name='balance_fill'),
+
+    path('balance/fill/success/', views.FillBalanceSuccessCallbackAPIView.as_view(), name='balance_fill_success')
 ]

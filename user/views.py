@@ -4,6 +4,7 @@ import requests
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render
+from django.urls import reverse
 from rest_framework import generics, status, views, exceptions
 from rest_framework.response import Response
 
@@ -128,17 +129,6 @@ class FillBalanceAPIView(generics.CreateAPIView):
         return sha256(sign_string.encode()).hexdigest()
 
     def send_payment_creation_request(self, sign):
-        # return {
-        #     'url': settings.PIASTRIX_CONFIG.get('BASE_URL'),
-        #     'data': {
-        #         'amount': self.record.amount,
-        #         'currency': self.record.currency,
-        #         'shop_id': settings.PIASTRIX_CONFIG.get('SHOP_ID'),
-        #         'sign': sign,
-        #         'shop_order_id': self.record.id,
-        #         'payway': 'card_rub'
-        #     }
-        # }
         data = {
             'amount': self.record.amount,
             'currency': self.record.currency,
@@ -146,8 +136,25 @@ class FillBalanceAPIView(generics.CreateAPIView):
             'sign': sign,
             'shop_order_id': self.record.id,
             'payway': 'card_rub',
-            'description': 'Test invoice'
         }
+        data.update(self.get_callback_urls())
         response = requests.post(settings.PIASTRIX_CONFIG.get('BASE_URL'), json=data)
         return response.json()
 
+    def get_callback_urls(self):
+        protocol = 'https' if self.request.is_secure() else 'http'
+        site_url = f'{protocol}://{self.request.get_host()}'
+
+        path = reverse('user:balance_fill_success')
+
+        return {
+            'success_url': f'{site_url}{path}',
+            'failed_url': f'{site_url}{path}'
+        }
+
+
+class FillBalanceSuccessCallbackAPIView(views.APIView):
+
+    def get(self, *args, **kwargs):
+        print(self.request.query_params)
+        return Response()
