@@ -27,8 +27,8 @@ class UserAdmin(AbstractUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         (_('Personal info'), {'fields': (
-            'first_name',
-            'last_name',
+            'full_name',
+            'phone_number',
             'username',
             'balance'
         )}),

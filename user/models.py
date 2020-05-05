@@ -17,10 +17,18 @@ class User(AbstractUser):
     username = models.CharField(max_length=255, unique=False, blank=True, verbose_name='Имя пользователя', default='')
     email = models.EmailField(unique=True, verbose_name='E-Mail')
 
+    full_name = models.CharField(max_length=255, verbose_name='Полное имя', null=True, blank=True)
+    phone_number = models.CharField(max_length=255, verbose_name='Номер телефона', null=True, blank=True)
+
     balance = MoneyField(max_digits=14, decimal_places=2, default_currency='RUB', default=0)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
+
+    def get_full_name(self):
+        if self.full_name:
+            return self.full_name
+        return super(User, self).get_full_name()
 
 
 class AccessToken(models.Model):

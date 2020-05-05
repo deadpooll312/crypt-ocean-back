@@ -36,11 +36,13 @@ class UserCreationAPIView(generics.CreateAPIView):
         return Response(token, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
-        password = make_password(serializer.data.get('password_confirm'))
+        password = make_password(serializer.data.get('password'))
 
         user = User.objects.create(
             email=serializer.data.get('email'),
             password=password,
+            full_name=serializer.data.get('full_name'),
+            phone_number=serializer.data.get('phone_number'),
             is_active=True,
         )
 
