@@ -5,6 +5,7 @@ urlpatterns = [
     path('sign-up/', views.UserCreationAPIView.as_view(), name='sign_up'),
     path('sign-in/', views.RestAuthAPIView.as_view(), name='sign_in'),
     path('me/', views.GetProfileAPIView.as_view(), name='get_profile'),
+    path('transactions/', views.UserTransactionHistoryAPIView.as_view(), name='transactions'),
 
 
     path('balance/', include([

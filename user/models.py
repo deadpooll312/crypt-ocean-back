@@ -1,8 +1,12 @@
 from secrets import token_hex
 
+from djmoney.money import Money
+
+from user.constants import TRANSACTION_TYPE_CHOICES, FILL_TRANSACTION
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from djmoney.models.fields import MoneyField
 
 
@@ -56,3 +60,43 @@ class UserBalanceFilRecord(models.Model):
 
     def __str__(self):
         return self.amount
+
+    def save(self, *args, **kwargs):
+        super(UserBalanceFilRecord, self).save(*args, **kwargs)
+
+        if self.is_success:
+            Transaction.objects.create(
+                user=self.user,
+                transaction_type=FILL_TRANSACTION,
+                amount=Money(self.amount, 'RUB')
+            )
+
+
+class Transaction(models.Model):
+    class Meta:
+        verbose_name_plural = 'Транзакции пользователя'
+        verbose_name = 'Транзакция'
+
+    user = models.ForeignKey(to=User, on_delete=models.PROTECT, verbose_name='Пользователь')
+    transaction_type = models.CharField(max_length=255, verbose_name='Тип транзакции', choices=TRANSACTION_TYPE_CHOICES)
+    amount = MoneyField(max_digits=14, decimal_places=2, default_currency='RUB', default=0, verbose_name='Сумма')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+
+    def __str__(self):
+        _ = f'[{self.user.email}] ({self.created_at.__format__("%d.%m.%Y %H:%M")})'
+
+        if self.transaction_type == FILL_TRANSACTION:
+            return f'{_} +{self.amount}'
+
+        return f'{_} -{self.amount}'
+
+
+class BalanceFillConfiguration(models.Model):
+    class Meta:
+        verbose_name = 'Настройка пополнений баланса'
+        verbose_name_plural = 'Настройка пополнений баланса'
+
+    min_fill_amount = MoneyField(max_digits=14, decimal_places=2, default_currency='RUB', default=0, verbose_name='Минимальная сумма пополнения')
+
+    def __str__(self):
+        return 'Настройка пополнений баланса'

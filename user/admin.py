@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, UserBalanceFilRecord
+from .models import User, UserBalanceFilRecord, Transaction, BalanceFillConfiguration
 from django.contrib.auth.admin import UserAdmin as AbstractUserAdmin
 from django.utils.translation import gettext, gettext_lazy as _
 from django.contrib.auth.admin import Group
@@ -14,6 +14,16 @@ class UserBalanceFillRecordInline(admin.TabularInline):
 
     readonly_fields = ['amount', 'currency', 'is_success', 'created_at']
     exclude = ['error_message']
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class TransactionInline(admin.StackedInline):
+    model = Transaction
+    extra = 0
+
+    readonly_fields = ['transaction_type', 'amount', 'created_at']
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -38,7 +48,14 @@ class UserAdmin(AbstractUserAdmin):
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
 
-    inlines = (UserBalanceFillRecordInline,)
+    inlines = (UserBalanceFillRecordInline, TransactionInline)
+
+
+@admin.register(BalanceFillConfiguration)
+class BalanceFillConfigurationAdmin(admin.ModelAdmin):
+
+    def has_add_permission(self, request):
+        return self.model.objects.count() < 1
 
 
 admin.site.unregister(Group)

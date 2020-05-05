@@ -1,6 +1,8 @@
+from djmoney.money import Money
 from rest_framework import serializers, exceptions
-
-from user.models import User, AccessToken, UserBalanceFilRecord
+import decimal
+from user.models import User, AccessToken, UserBalanceFilRecord, Transaction
+from user.utils import get_min_fill_amount
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -33,6 +35,17 @@ class TokenSerializer(serializers.ModelSerializer):
 class FillBalanceSerializer(serializers.Serializer):
     balance = serializers.CharField()
 
+    def validate_balance(self, value):
+        try:
+            value = decimal.Decimal(value)
+        except decimal.ConversionSyntax:
+            raise exceptions.ValidationError('Не удалось распознать число')
+
+        if Money(value, 'RUB') < get_min_fill_amount():
+            raise exceptions.ValidationError(f'Минимальная сумма пополнения: {get_min_fill_amount()}')
+
+        return str(value)
+
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -44,3 +57,20 @@ class UserBalanceFillRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserBalanceFilRecord
         fields = ('amount', 'currency', 'is_success', 'created_at')
+
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ('transaction_type', 'amount', 'created_at')
+
+
+class BalanceFillResponseDataSerializer(serializers.Serializer):
+    session_id = serializers.CharField()
+
+
+class BalanceFillResponseSerializer(serializers.Serializer):
+    data = BalanceFillResponseDataSerializer()
+    id = serializers.IntegerField()
+    method = serializers.CharField()
+    url = serializers.CharField()

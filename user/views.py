@@ -5,13 +5,16 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.utils.decorators import method_decorator
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status, views, exceptions
 from rest_framework.response import Response
 
 from BefreeBingo import settings
-from .models import User, AccessToken, UserBalanceFilRecord
+from .models import User, AccessToken, UserBalanceFilRecord, Transaction
+from .pagination import TransactionPagination
 from .permissions import IsAuthenticated
-from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer
+from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer, TransactionSerializer, BalanceFillResponseSerializer
 from bets.serializers import BetSerializer
 from bets.models import Bet
 from hashlib import sha256
@@ -20,7 +23,13 @@ from djmoney.money import Money
 
 # Create your views here.
 
-
+@method_decorator(swagger_auto_schema(
+    operation_summary='Регистрация',
+    query_serializer=RegisterSerializer(),
+    responses={
+        201: TokenSerializer()
+    }
+), name='post')
 class UserCreationAPIView(generics.CreateAPIView):
     """
     Registration
@@ -51,6 +60,13 @@ class UserCreationAPIView(generics.CreateAPIView):
         return TokenSerializer(instance=token_instance).data
 
 
+@method_decorator(swagger_auto_schema(
+    operation_summary='Авторизация',
+    query_serializer=LoginSerializer(),
+    responses={
+        201: TokenSerializer()
+    }
+), name='post')
 class RestAuthAPIView(generics.CreateAPIView):
     """
         Authentication
@@ -78,6 +94,9 @@ class RestAuthAPIView(generics.CreateAPIView):
         return TokenSerializer(instance=token_instance).data
 
 
+@method_decorator(swagger_auto_schema(
+    operation_summary='Получение профиля по токену',
+), name='get')
 class GetProfileAPIView(generics.RetrieveAPIView):
     """
         Get Profile by token
@@ -90,6 +109,12 @@ class GetProfileAPIView(generics.RetrieveAPIView):
         return self.request.user
 
 
+@method_decorator(swagger_auto_schema(
+    operation_summary='Запрос на пополнение баланса',
+    responses={
+        201: BalanceFillResponseSerializer(),
+    }
+), name='post')
 class FillBalanceAPIView(generics.CreateAPIView):
     """
         Registration
@@ -142,8 +167,21 @@ class FillBalanceAPIView(generics.CreateAPIView):
             'shop_order_id': self.record.id,
             'payway': 'card_rub',
         }
-        response = requests.post(settings.PIASTRIX_CONFIG.get('BASE_URL'), json=data)
-        return response.json()
+
+        try:
+            response = requests.post(settings.PIASTRIX_CONFIG.get('BASE_URL'), json=data)
+        except requests.exceptions.BaseHTTPError:
+            raise exceptions.ValidationError({'piastrix': ['Сервис не отвечает']})
+
+        if response.status_code != status.HTTP_200_OK:
+            raise exceptions.ValidationError({'piastrix': [f'HTTP {response.status_code}: {response.text}']})
+
+        _json = response.json()
+
+        if not _json.get('result', False):
+            raise exceptions.ValidationError({'piastrix': [f'Код ошибки: {_json.get("error_code")}. {_json.get("message")}']})
+
+        return _json.get('data')
 
     def get_callback_urls(self):
         protocol = 'https' if self.request.is_secure() else 'http'
@@ -188,6 +226,7 @@ class FillBalanceFailureCallbackAPIView(views.APIView):
 
 
 class UserFillHistoryAPIView(generics.ListAPIView):
+    swagger_schema = None
 
     permission_classes = (IsAuthenticated,)
     serializer_class = UserBalanceFillRecordSerializer
@@ -197,9 +236,20 @@ class UserFillHistoryAPIView(generics.ListAPIView):
 
 
 class UserBetsHistoryApiView(generics.ListAPIView):
+    swagger_schema = None
 
     permission_classes = (IsAuthenticated,)
     serializer_class = BetSerializer
 
     def get_queryset(self):
         return Bet.objects.select_related('coefficient').filter(user=self.request.user)
+
+
+class UserTransactionHistoryAPIView(generics.ListAPIView):
+    serializer_class = TransactionSerializer
+    permission_classes = (IsAuthenticated,)
+
+    pagination_class = TransactionPagination
+
+    def get_queryset(self):
+        return Transaction.objects.filter(user=self.request.user).order_by('-created_at')
