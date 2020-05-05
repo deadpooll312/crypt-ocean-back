@@ -74,3 +74,4 @@ class BalanceFillResponseSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     method = serializers.CharField()
     url = serializers.CharField()
+    email = serializers.EmailField()

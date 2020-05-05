@@ -128,25 +128,6 @@ class FillBalanceAPIView(generics.CreateAPIView):
 
         self.record: Optional[UserBalanceFilRecord] = None
 
-    def create(self, *args, **kwargs):
-        serializer = self.get_serializer(data=self.request.data)
-        serializer.is_valid(raise_exception=True)
-
-        self.record = self.perform_create(serializer)
-        sign = self.get_sign(serializer)
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(self.send_payment_creation_request(sign), status=status.HTTP_201_CREATED, headers=headers)
-
-    def perform_create(self, serializer):
-        amount = serializer.data.get('balance', 750.00)
-
-        return UserBalanceFilRecord.objects.create(
-            user=self.request.user,
-            amount=amount,
-            currency=643
-        )
-
     def get_sign(self, serializer):
         amount = str(self.record.amount)
         currency = self.record.currency
@@ -179,9 +160,11 @@ class FillBalanceAPIView(generics.CreateAPIView):
         _json = response.json()
 
         if not _json.get('result', False):
-            raise exceptions.ValidationError({'piastrix': [f'Код ошибки: {_json.get("error_code")}. {_json.get("message")}']})
+            raise exceptions.ValidationError({'piastrix': [f'Код ошибки: {_json.get("error_code")}. Piastrix: {_json.get("message")}']})
 
-        return _json.get('data')
+        return _json.get('data').update({
+            'email': self.request.user.email
+        })
 
     def get_callback_urls(self):
         protocol = 'https' if self.request.is_secure() else 'http'
@@ -193,6 +176,25 @@ class FillBalanceAPIView(generics.CreateAPIView):
             'success_url': f'{site_url}{path}',
             'failed_url': f'{site_url}{path}'
         }
+
+    def create(self, *args, **kwargs):
+        serializer = self.get_serializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+
+        self.record = self.perform_create(serializer)
+        sign = self.get_sign(serializer)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(self.send_payment_creation_request(sign), status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        amount = serializer.data.get('balance', 750.00)
+
+        return UserBalanceFilRecord.objects.create(
+            user=self.request.user,
+            amount=amount,
+            currency=643
+        )
 
 
 class FillBalanceSuccessCallbackAPIView(views.APIView):
