@@ -5,8 +5,7 @@ from djmoney.money import Money
 from user.constants import TRANSACTION_TYPE_CHOICES, FILL_TRANSACTION
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+from bets.utils import get_random_number
 from djmoney.models.fields import MoneyField
 
 
@@ -25,6 +24,9 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=255, verbose_name='Номер телефона', null=True, blank=True)
 
     balance = MoneyField(max_digits=14, decimal_places=2, default_currency='RUB', default=0)
+
+    promo_code = models.CharField(max_length=20, verbose_name='Промокод для регистрации', default=get_random_number, unique=True)
+    related_referer = models.ForeignKey(to='User', on_delete=models.SET_NULL, null=True, blank=True, related_name='referral')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

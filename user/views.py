@@ -45,15 +45,20 @@ class UserCreationAPIView(generics.CreateAPIView):
         return Response(token, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
-        password = make_password(serializer.data.get('password'))
+        password = make_password(serializer.validated_data.get('password'))
 
         user = User.objects.create(
-            email=serializer.data.get('email'),
+            email=serializer.validated_data.get('email'),
             password=password,
-            full_name=serializer.data.get('full_name'),
-            phone_number=serializer.data.get('phone_number'),
+            full_name=serializer.validated_data.get('full_name'),
+            phone_number=serializer.validated_data.get('phone_number'),
             is_active=True,
         )
+
+        if serializer.validated_data.get('promo_code'):
+            print(serializer.validated_data.get('promo_code'))
+            user.related_referer = serializer.validated_data.get('promo_code')
+            user.save()
 
         token_instance = AccessToken.objects.create(user=user)
 

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from djmoney.money import Money
 from rest_framework import serializers, exceptions
 import decimal
@@ -10,6 +12,7 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     phone_number = serializers.CharField()
     password = serializers.CharField()
+    promo_code = serializers.CharField(allow_blank=True, allow_null=True, required=False)
 
     def validate_email(self, value):
         if not value:
@@ -19,6 +22,17 @@ class RegisterSerializer(serializers.Serializer):
             raise exceptions.ValidationError('Этот Email уже используется')
 
         return value
+
+    def validate_promo_code(self, value) -> Optional[User]:
+        if value:
+            user = User.objects.filter(promo_code=value).first()
+
+            if not user:
+                raise exceptions.ValidationError('Неправильный промокод')
+
+            return user
+
+        return None
 
 
 class LoginSerializer(serializers.Serializer):
@@ -50,7 +64,7 @@ class FillBalanceSerializer(serializers.Serializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('email', 'balance', 'full_name', 'phone_number')
+        fields = ('email', 'balance', 'full_name', 'phone_number', 'promo_code')
 
 
 class UserBalanceFillRecordSerializer(serializers.ModelSerializer):

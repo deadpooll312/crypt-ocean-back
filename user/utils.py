@@ -1,3 +1,5 @@
+import random
+
 from djmoney.money import Money
 from .models import BalanceFillConfiguration
 
