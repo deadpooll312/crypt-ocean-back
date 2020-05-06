@@ -45,7 +45,7 @@ class MakeBetAPIView(generics.CreateAPIView):
 
     def perform_create(self, serializer) -> Bet:
         if self.request.user.balance < Money(serializer.validated_data.get('amount'), 'RUB'):
-            raise exceptions.ValidationError({'amount': 'У вас не достаточно средств'})
+            raise exceptions.ValidationError({'amount': ['У вас не достаточно средств']})
 
         instance: Bet = serializer.save(user=self.request.user)
         self.request.user.balance = self.request.user.balance - Money(serializer.validated_data.get('amount'), 'RUB')
