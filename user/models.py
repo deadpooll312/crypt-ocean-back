@@ -1,3 +1,4 @@
+import uuid
 from secrets import token_hex
 
 from djmoney.money import Money
@@ -59,6 +60,7 @@ class UserBalanceFilRecord(models.Model):
     error_message = models.TextField(verbose_name='Текст ошибки', null=True, blank=True)
 
     created_at = models.DateTimeField(verbose_name='Дата создания', auto_now_add=True)
+    token = models.CharField(max_length=255, verbose_name='Токен проверки', default=uuid.uuid4, unique=True)
 
     def __str__(self):
         return self.amount

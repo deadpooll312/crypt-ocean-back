@@ -224,14 +224,14 @@ class FillBalanceSuccessCallbackAPIView(views.APIView):
         record.user.balance = record.user.balance + Money(record.amount, 'RUB')
         record.user.save()
 
-        return HttpResponseRedirect(f'{settings.FRONTEND_URL}/balance/fill/success/')
+        return HttpResponseRedirect(f'{settings.FRONTEND_URL}/success/?record_signature={record.token}')
 
 
 class FillBalanceFailureCallbackAPIView(views.APIView):
     swagger_schema = None
 
     def get(self, *args, **kwargs):
-        return HttpResponseRedirect(f'{settings.FRONTEND_URL}/balance/fill/failure/')
+        return HttpResponseRedirect(f'{settings.FRONTEND_URL}/failure/')
 
 
 class UserFillHistoryAPIView(generics.ListAPIView):
