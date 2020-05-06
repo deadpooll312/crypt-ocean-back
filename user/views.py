@@ -162,9 +162,11 @@ class FillBalanceAPIView(generics.CreateAPIView):
         if not _json.get('result', False):
             raise exceptions.ValidationError({'piastrix': [f'Код ошибки: {_json.get("error_code")}. Piastrix: {_json.get("message")}']})
 
-        return _json.get('data').update({
+        _response = _json.get('data')
+        _response.update({
             'email': self.request.user.email
         })
+        return _response
 
     def get_callback_urls(self):
         protocol = 'https' if self.request.is_secure() else 'http'

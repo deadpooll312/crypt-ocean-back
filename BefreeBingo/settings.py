@@ -163,10 +163,10 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.MultiPartParser',
     ),
     # 'EXCEPTION_HANDLER': 'core.common.handlers.custom_exception_handler',
-    'DATETIME_FORMAT': '%d.%m.%Y %H:%M',
-    'DATE_FORMAT': '%d.%m.%Y',
+    'DATETIME_FORMAT': '%d.%m.%y %H:%M',
+    'DATE_FORMAT': '%d.%m.%y',
     'DATE_INPUT_FORMATS': [
-        '%d.%m.%Y'
+        '%d.%m.%y'
     ],
     'TIME_FORMAT': '%H:%M',
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
