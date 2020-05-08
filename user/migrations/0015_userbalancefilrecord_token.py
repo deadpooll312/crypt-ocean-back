@@ -11,6 +11,10 @@ def create_uuid(apps, schema_editor):
         user_profile.save(update_fields=['token'])
 
 
+def reverse_placeholder(apps, schema_editor):
+    pass
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ('user', '0014_user_related_referer'),
@@ -22,7 +26,7 @@ class Migration(migrations.Migration):
             name='token',
             field=models.CharField(default=uuid.uuid4, max_length=255, null=True, unique=True, verbose_name='Токен проверки'),
         ),
-        migrations.RunPython(create_uuid),
+        migrations.RunPython(create_uuid, reverse_placeholder),
         migrations.AlterField(
             model_name='userbalancefilrecord',
             name='token',

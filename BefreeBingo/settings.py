@@ -183,6 +183,12 @@ PIASTRIX_CONFIG = {
     'BASE_URL': 'https://core.piastrix.com/invoice/create'
 }
 
+BITCHANGE_CONFIG = {
+    'SHOP_ID': 'BlqWarhVLHmqA8DdPoZNK00xebYNDf',
+    'SHOP_SECRET': 'KSvP4AwZG5tYWf1wWuw0meL3QAdJOp',
+    'BASE_URL': 'https://api.bitchange.online/api/v1/create_order'
+}
+
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Token': {

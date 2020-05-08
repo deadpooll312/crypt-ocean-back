@@ -14,6 +14,7 @@ urlpatterns = [
 
             path('success/', views.FillBalanceSuccessCallbackAPIView.as_view(), name='balance_fill_success'),
             path('failure/', views.FillBalanceFailureCallbackAPIView.as_view(), name='balance_fill_failure'),
+            path('callback/<int:record_id>/', views.FillBalanceCallbackAPIView.as_view(), name='balance_fill_callback')
         ])),
 
         path('history/', views.UserFillHistoryAPIView.as_view(), name='balance_history'),

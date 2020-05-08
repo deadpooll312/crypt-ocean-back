@@ -56,7 +56,7 @@ class UserBalanceFilRecord(models.Model):
     amount = models.CharField(max_length=255, verbose_name='Сумма пополнения')
     currency = models.CharField(max_length=255, verbose_name='Валюта')
 
-    is_success = models.BooleanField(default=False, verbose_name='Успешно пополнено!')
+    is_success = models.BooleanField(default=False, verbose_name='Успешно пополнено?')
     error_message = models.TextField(verbose_name='Текст ошибки', null=True, blank=True)
 
     created_at = models.DateTimeField(verbose_name='Дата создания', auto_now_add=True)

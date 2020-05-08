@@ -58,4 +58,10 @@ class BalanceFillConfigurationAdmin(admin.ModelAdmin):
         return self.model.objects.count() < 1
 
 
+@admin.register(UserBalanceFilRecord)
+class BalanceFillRecordAdmin(admin.ModelAdmin):
+    list_display = ['user', 'amount', 'currency', 'created_at', 'is_success']
+    readonly_fields = ['token', 'error_message', 'user', 'amount', 'currency', 'is_success']
+
+
 admin.site.unregister(Group)
