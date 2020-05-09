@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import re
 from typing import Optional
 import hmac
 import requests
@@ -212,7 +213,7 @@ class FillBalanceAPIView(generics.CreateAPIView):
             "order_description": "Пополнение баланса на befree.bingo",
             "return_url": self.get_callback_urls(),
             "ip": get_client_ip(self.request),
-            "phone_number": self.record.user.phone_number,
+            "phone_number": re.sub(re.compile(r'\s', re.IGNORECASE), '', self.record.user.phone_number or ''),
             "email": self.record.user.email
         }
 
