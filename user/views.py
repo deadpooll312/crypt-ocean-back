@@ -223,7 +223,12 @@ class FillBalanceAPIView(generics.CreateAPIView):
         }
         headers.update(self.get_bitchange_auth_headers())
         response = requests.post(self.bit_change_url, json=data, headers=headers)
-
+        print('DATA:')
+        print(data)
+        print('HEADERS:')
+        print(headers)
+        print('RESPONSE:')
+        print(response.json())
         return self.format_bitchange_response(response.json())
 
     def format_bitchange_response(self, response):
