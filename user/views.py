@@ -215,8 +215,8 @@ class FillBalanceAPIView(generics.CreateAPIView):
             "ip": get_client_ip(self.request),
             "phone_number": re.sub(re.compile(r'\s', re.IGNORECASE), '', self.record.user.phone_number or ''),
             "email": self.record.user.email,
-            "success_url": settings.FRONTEND_URL + '/success?record_token=' + self.record.token,
-            "failed_url": settings.FRONTEND_URL + '/failure?record_token=' + self.record.token,
+            "success_url": settings.FRONTEND_URL + '/success?record_token=' + str(self.record.token),
+            "failed_url": settings.FRONTEND_URL + '/failure?record_token=' + str(self.record.token),
         }
 
         headers = {
