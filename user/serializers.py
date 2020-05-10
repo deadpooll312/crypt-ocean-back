@@ -70,7 +70,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 class UserBalanceFillRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserBalanceFilRecord
-        fields = ('amount', 'currency', 'is_success', 'created_at')
+        fields = ('amount', 'currency', 'is_success', 'created_at', 'error_message')
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -84,8 +84,20 @@ class BalanceFillResponseDataSerializer(serializers.Serializer):
 
 
 class BalanceFillResponseSerializer(serializers.Serializer):
-    data = BalanceFillResponseDataSerializer()
-    id = serializers.IntegerField()
-    method = serializers.CharField()
-    url = serializers.CharField()
-    email = serializers.EmailField()
+    amount = serializers.CharField()
+    currency = serializers.CharField()
+    error_code = serializers.IntegerField()
+    error_message = serializers.CharField()
+    invoice_type = serializers.CharField()
+    order_id = serializers.IntegerField()
+    order_status = serializers.CharField()
+    payment_token = serializers.CharField()
+    payment_url = serializers.CharField()
+    result = serializers.CharField()
+    return_url = serializers.CharField()
+    timestamp = serializers.IntegerField()
+
+
+class BalanceFillConfirmSerializer(serializers.Serializer):
+    shop_order_id = serializers.IntegerField()
+    status = serializers.ChoiceField(choices=(('success', 'Успех'), ('failure', 'Не удача')))

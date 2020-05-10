@@ -61,6 +61,7 @@ class UserBalanceFilRecord(models.Model):
 
     created_at = models.DateTimeField(verbose_name='Дата создания', auto_now_add=True)
     token = models.CharField(max_length=255, verbose_name='Токен проверки', default=uuid.uuid4, unique=True)
+    is_finished = models.BooleanField(default=False, verbose_name='Оплата проведена до конца?')
 
     def __str__(self):
         return self.amount

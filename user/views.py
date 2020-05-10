@@ -17,11 +17,10 @@ from BefreeBingo import settings
 from .models import User, AccessToken, UserBalanceFilRecord, Transaction
 from .pagination import TransactionPagination
 from .permissions import IsAuthenticated
-from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer, TransactionSerializer, BalanceFillResponseSerializer
+from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer, TransactionSerializer, BalanceFillResponseSerializer, BalanceFillConfirmSerializer
 from bets.serializers import BetSerializer
 from bets.models import Bet
 from djmoney.money import Money
-
 
 # Create your views here.
 from .utils import get_client_ip
@@ -263,34 +262,45 @@ class FillBalanceAPIView(generics.CreateAPIView):
         )
 
 
-class FillBalanceCallbackAPIView(views.APIView):
+@method_decorator(swagger_auto_schema(
+    operation_summary='Запрос на подтверждения пополнения баланса',
+    responses={
+        201: UserBalanceFillRecordSerializer(),
+    }
+), name='post')
+class FillBalanceCallbackAPIView(generics.CreateAPIView):
+    serializer_class = BalanceFillConfirmSerializer
+    permission_classes = (IsAuthenticated,)
 
-    def get(self, *args, **kwargs):
-        record_id = kwargs.get('record_id', None)
+    def create(self, *args, **kwargs):
+        serializer = self.get_serializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        record = self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(record, status=status.HTTP_201_CREATED, headers=headers)
 
-        if not record_id:
-            raise exceptions.ValidationError({'record_id': ['ID записи обязателен']})
-
+    def perform_create(self, serializer):
         try:
-            record = UserBalanceFilRecord.objects.get(id=record_id)
+            record = UserBalanceFilRecord.objects.get(id=serializer.data.get('shop_order_id'))
         except UserBalanceFilRecord.DoesNotExist:
-            raise exceptions.ValidationError({'record_id': ['Запист о пополнении не найдена']})
+            raise exceptions.ValidationError({'shop_order_id': ['Транзакция не найдена']})
 
-        _status = self.request.query_params.get('status', None)
-        if not _status:
-            raise exceptions.ValidationError({'status': ['Не установлено статуса оплаты']})
+        if record.is_finished:
+            raise exceptions.ValidationError({'shop_order_id': ['Эта ссылка устарела']})
 
-        if _status == 'success':
+        record.is_finished = True
+
+        if serializer.data.get('status', 'failure') == 'success':
             record.is_success = True
             record.user.balance = record.user.balance + Money(record.amount, 'RUB')
-            record.user.save()
-            record.save()
-            return HttpResponseRedirect(f'{settings.FRONTEND_URL}/success/?record_signature={record.token}')
+            record.user.save(update_fields=['balance'])
+            record.save(update_fields=['is_finished', 'is_success'])
+            return UserBalanceFillRecordSerializer(instance=record).data
 
         record.is_success = False
-        record.error_message = f'Response from bitchange: {"&".join(f"{k}={self.request.query_params.get(k)}" for k in self.request.query_params.keys())}'
-        record.save()
-        return HttpResponseRedirect(f'{settings.FRONTEND_URL}/failure/?record_signature={record.token}')
+        record.error_message = 'Bitchange payment failure'
+        record.save(update_fields=['is_finished', 'is_success', 'error_message'])
+        return UserBalanceFillRecordSerializer(instance=record).data
 
 
 class FillBalanceSuccessCallbackAPIView(views.APIView):
