@@ -11,7 +11,7 @@ class CoefficientAdmin(admin.ModelAdmin):
 
 @admin.register(Bet)
 class BetAdmin(admin.ModelAdmin):
-    list_display = ['coefficient', 'user', 'amount', 'created_at', 'is_active']
+    list_display = ['date', 'user', 'amount', 'created_at', 'is_active']
 
-    search_fields = ['coefficient', 'amount']
+    search_fields = ['date', 'amount']
     list_filter = ['is_active']
