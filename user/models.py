@@ -86,6 +86,7 @@ class Transaction(models.Model):
     transaction_type = models.CharField(max_length=255, verbose_name='Тип транзакции', choices=TRANSACTION_TYPE_CHOICES)
     amount = MoneyField(max_digits=14, decimal_places=2, default_currency='RUB', default=0, verbose_name='Сумма')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    set_date = models.DateField(verbose_name='Дата ставки', null=True, blank=True)
 
     def __str__(self):
         _ = f'[{self.user.email}] ({self.created_at.__format__("%d.%m.%Y %H:%M")})'

@@ -76,7 +76,7 @@ class UserBalanceFillRecordSerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        fields = ('transaction_type', 'amount', 'created_at')
+        fields = ('transaction_type', 'amount', 'created_at', 'set_date')
 
 
 class BalanceFillResponseDataSerializer(serializers.Serializer):

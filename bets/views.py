@@ -54,7 +54,8 @@ class MakeBetAPIView(generics.CreateAPIView):
         Transaction.objects.create(
             user=self.request.user,
             transaction_type=BET_TRANSACTION,
-            amount=instance.amount
+            amount=instance.amount,
+            set_date=instance.date
         )
 
         return instance
