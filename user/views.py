@@ -17,7 +17,7 @@ from BefreeBingo import settings
 from .models import User, AccessToken, UserBalanceFilRecord, Transaction
 from .pagination import TransactionPagination
 from .permissions import IsAuthenticated
-from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer, TransactionSerializer, BalanceFillResponseSerializer, BalanceFillConfirmSerializer
+from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer, TransactionSerializer, BalanceFillResponseSerializer, BalanceFillConfirmSerializer, UserUpdateSerializer
 from bets.serializers import BetSerializer
 from bets.models import Bet
 from djmoney.money import Money
@@ -361,3 +361,12 @@ class UserTransactionHistoryAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         return Transaction.objects.filter(user=self.request.user).order_by('-created_at')
+
+
+class UserUpdateAPIView(generics.UpdateAPIView):
+
+    serializer_class = UserUpdateSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self):
+        return self.request.user

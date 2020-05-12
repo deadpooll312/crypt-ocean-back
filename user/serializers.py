@@ -101,3 +101,9 @@ class BalanceFillResponseSerializer(serializers.Serializer):
 class BalanceFillConfirmSerializer(serializers.Serializer):
     shop_order_id = serializers.IntegerField()
     status = serializers.ChoiceField(choices=(('success', 'Успех'), ('failure', 'Не удача')))
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('full_name', 'email', 'phone_number')
