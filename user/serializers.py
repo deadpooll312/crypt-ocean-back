@@ -64,7 +64,7 @@ class FillBalanceSerializer(serializers.Serializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('email', 'balance', 'full_name', 'phone_number', 'promo_code')
+        fields = ('email', 'balance', 'full_name', 'phone_number', 'promo_code', 'related_referer')
 
 
 class UserBalanceFillRecordSerializer(serializers.ModelSerializer):

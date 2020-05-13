@@ -37,14 +37,15 @@ class User(AbstractUser):
             return self.full_name
         return super(User, self).get_full_name()
 
-    def add_balance(self, amount: Money, transaction_type=FILL_TRANSACTION, bonus_from: 'User' = None):
+    def add_balance(self, amount: Money, transaction_type=FILL_TRANSACTION, bonus_from: 'User' = None, set_date=None):
         self.balance += amount
 
         Transaction.objects.create(
             user=self,
-            amount=amount,
+            amount=abs(amount),
             transaction_type=transaction_type,
-            bonus_from=bonus_from
+            bonus_from=bonus_from,
+            set_date=set_date
         )
 
         self.save()
