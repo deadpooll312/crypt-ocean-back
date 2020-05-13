@@ -11,9 +11,10 @@ from django.contrib.auth.admin import Group
 class UserBalanceFillRecordInline(admin.TabularInline):
     model = UserBalanceFilRecord
     extra = 0
+    ordering = ('-created_at',)
 
-    readonly_fields = ['amount', 'currency', 'is_success', 'created_at']
-    exclude = ['error_message']
+    readonly_fields = ['amount', 'currency', 'is_success', 'created_at', 'is_finished']
+    exclude = ['error_message', 'token']
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -22,8 +23,10 @@ class UserBalanceFillRecordInline(admin.TabularInline):
 class TransactionInline(admin.StackedInline):
     model = Transaction
     extra = 0
+    fk_name = 'user'
+    ordering = ('-created_at',)
 
-    readonly_fields = ['transaction_type', 'amount', 'created_at']
+    readonly_fields = ['transaction_type', 'amount', 'created_at', 'bonus_from', 'set_date']
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -40,7 +43,8 @@ class UserAdmin(AbstractUserAdmin):
             'full_name',
             'phone_number',
             'username',
-            'balance'
+            'balance',
+            'related_referer'
         )}),
         (_('Permissions'), {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),

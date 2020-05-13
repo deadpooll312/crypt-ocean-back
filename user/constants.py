@@ -1,7 +1,9 @@
 BET_TRANSACTION = 'BET_TRANSACTION'
 FILL_TRANSACTION = 'FILL_TRANSACTION'
+BONUS_TRANSACTION = 'BONUS_TRANSACTION'
 
 TRANSACTION_TYPE_CHOICES = (
     (BET_TRANSACTION, 'Ставка'),
-    (FILL_TRANSACTION, 'Пополнение баланса')
+    (FILL_TRANSACTION, 'Пополнение баланса'),
+    (BONUS_TRANSACTION, 'Бонус от реферальной программы')
 )

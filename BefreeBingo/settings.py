@@ -210,6 +210,8 @@ FRONTEND_URL = 'http://w.beeyonance.exchange'
 
 JET_SIDE_MENU_COMPACT = True
 
+REFERRAL_BONUS_PERCENT = 5
+
 
 try:
     from .settings_local import *

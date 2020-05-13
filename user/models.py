@@ -37,6 +37,18 @@ class User(AbstractUser):
             return self.full_name
         return super(User, self).get_full_name()
 
+    def add_balance(self, amount: Money, transaction_type=FILL_TRANSACTION, bonus_from: 'User' = None):
+        self.balance += amount
+
+        Transaction.objects.create(
+            user=self,
+            amount=amount,
+            transaction_type=transaction_type,
+            bonus_from=bonus_from
+        )
+
+        self.save()
+
 
 class AccessToken(models.Model):
     user = models.ForeignKey(to=User, on_delete=models.CASCADE)
@@ -47,6 +59,7 @@ class AccessToken(models.Model):
         return self.token
 
 
+# TODO: Typo error ;(
 class UserBalanceFilRecord(models.Model):
     class Meta:
         verbose_name_plural = 'История пополнения баланса'
@@ -66,27 +79,18 @@ class UserBalanceFilRecord(models.Model):
     def __str__(self):
         return self.amount
 
-    def save(self, *args, **kwargs):
-        super(UserBalanceFilRecord, self).save(*args, **kwargs)
-
-        if self.is_success:
-            Transaction.objects.create(
-                user=self.user,
-                transaction_type=FILL_TRANSACTION,
-                amount=Money(self.amount, 'RUB')
-            )
-
 
 class Transaction(models.Model):
     class Meta:
         verbose_name_plural = 'Транзакции пользователя'
         verbose_name = 'Транзакция'
 
-    user = models.ForeignKey(to=User, on_delete=models.PROTECT, verbose_name='Пользователь')
+    user = models.ForeignKey(to=User, on_delete=models.PROTECT, verbose_name='Пользователь', related_name='transactions')
     transaction_type = models.CharField(max_length=255, verbose_name='Тип транзакции', choices=TRANSACTION_TYPE_CHOICES)
     amount = MoneyField(max_digits=14, decimal_places=2, default_currency='RUB', default=0, verbose_name='Сумма')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     set_date = models.DateField(verbose_name='Дата ставки', null=True, blank=True)
+    bonus_from = models.ForeignKey(to=User, on_delete=models.SET_NULL, verbose_name='От реферала', null=True, blank=True, related_name='bonus_transactions')
 
     def __str__(self):
         _ = f'[{self.user.email}] ({self.created_at.__format__("%d.%m.%Y %H:%M")})'

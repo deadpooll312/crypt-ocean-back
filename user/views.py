@@ -14,6 +14,7 @@ from rest_framework import generics, status, views, exceptions
 from rest_framework.response import Response
 
 from BefreeBingo import settings
+from .constants import FILL_TRANSACTION, BONUS_TRANSACTION
 from .models import User, AccessToken, UserBalanceFilRecord, Transaction
 from .pagination import TransactionPagination
 from .permissions import IsAuthenticated
@@ -281,7 +282,7 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         try:
-            record = UserBalanceFilRecord.objects.get(id=serializer.data.get('shop_order_id'))
+            record = UserBalanceFilRecord.objects.prefetch_related('user').get(id=serializer.data.get('shop_order_id'))
         except UserBalanceFilRecord.DoesNotExist:
             raise exceptions.ValidationError({'shop_order_id': ['Транзакция не найдена']})
 
@@ -291,10 +292,7 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView):
         record.is_finished = True
 
         if serializer.data.get('status', 'failure') == 'success':
-            record.is_success = True
-            record.user.balance = record.user.balance + Money(record.amount, 'RUB')
-            record.user.save(update_fields=['balance'])
-            record.save(update_fields=['is_finished', 'is_success'])
+            self.add_balance_to_participants(record)
             return UserBalanceFillRecordSerializer(instance=record).data
 
         record.is_success = False
@@ -302,7 +300,23 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView):
         record.save(update_fields=['is_finished', 'is_success', 'error_message'])
         return UserBalanceFillRecordSerializer(instance=record).data
 
+    def add_balance_to_participants(self, record: UserBalanceFilRecord):
+        target_balance = Money(record.amount, 'RUB')
 
+        record.is_success = True
+        record.user.add_balance(target_balance)
+        record.save(update_fields=['is_finished', 'is_success'])
+
+        if record.user.related_referer:
+            bonus_percent = target_balance / 100 * settings.REFERRAL_BONUS_PERCENT
+
+            record.user.related_referer.add_balance(bonus_percent, BONUS_TRANSACTION, bonus_from=record.user)
+            record.user.add_balance(bonus_percent, BONUS_TRANSACTION)
+
+        return record
+
+
+# Deprecated
 class FillBalanceSuccessCallbackAPIView(views.APIView):
     swagger_schema = None
 
@@ -326,6 +340,7 @@ class FillBalanceSuccessCallbackAPIView(views.APIView):
         return HttpResponseRedirect(f'{settings.FRONTEND_URL}/success/?record_signature={record.token}')
 
 
+# Deprecated
 class FillBalanceFailureCallbackAPIView(views.APIView):
     swagger_schema = None
 
