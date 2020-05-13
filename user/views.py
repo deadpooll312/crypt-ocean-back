@@ -289,6 +289,9 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView):
         if record.is_finished:
             raise exceptions.ValidationError({'shop_order_id': ['Эта ссылка устарела']})
 
+        if record.user != self.request.user:
+            raise exceptions.PermissionDenied({'shop_order_id': ['Эта транзакция была совершена под другим аккаунтом']})
+
         record.is_finished = True
 
         if serializer.data.get('status', 'failure') == 'success':
