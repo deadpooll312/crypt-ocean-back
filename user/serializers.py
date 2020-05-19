@@ -3,7 +3,7 @@ from typing import Optional
 from djmoney.money import Money
 from rest_framework import serializers, exceptions
 import decimal
-from user.models import User, AccessToken, UserBalanceFilRecord, Transaction
+from user.models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken
 from user.utils import get_min_fill_amount
 
 
@@ -109,3 +109,40 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('full_name', 'email', 'phone_number')
+
+
+class RecoverPasswordRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        if not value:
+            raise exceptions.ValidationError('Email required')
+
+        if not User.objects.filter(email=value).exists():
+            raise exceptions.ValidationError('User not found')
+
+        return value
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    password = serializers.CharField()
+    confirm_password = serializers.CharField()
+    check_token = serializers.CharField()
+
+    def validate(self, attrs):
+        if attrs.get('password') != attrs.get('confirm_password'):
+            raise exceptions.ValidationError({
+                'password': ['Пароли не совпадают']
+            })
+        return attrs
+
+    def validate_check_token(self, value):
+        try:
+            token_instance = PasswordRecoverToken.objects.get(token=value)
+        except PasswordRecoverToken.DoesNotExist:
+            raise exceptions.ValidationError('Токен проверки не валидный')
+
+        if token_instance.is_used:
+            raise exceptions.ValidationError('Токен устарел')
+
+        return token_instance

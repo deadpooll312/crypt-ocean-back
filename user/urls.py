@@ -9,6 +9,13 @@ urlpatterns = [
     path('transactions/', views.UserTransactionHistoryAPIView.as_view(), name='transactions'),
 
 
+    path('password-recovery/', include([
+        path('request/', views.RecoverPasswordAPIView.as_view(), name='recover_request'),
+        path('token/check/', views.CheckRecoverTokenAPIView.as_view(), name='recover_check'),
+        path('password/change/', views.ChangePasswordAPIView.as_view(), name='recover_change_password'),
+    ])),
+
+
     path('balance/', include([
         path('fill/', include([
             path('', views.FillBalanceAPIView.as_view(), name='balance_fill'),

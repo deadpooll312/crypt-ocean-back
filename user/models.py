@@ -60,6 +60,15 @@ class AccessToken(models.Model):
         return self.token
 
 
+class PasswordRecoverToken(models.Model):
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    token = models.CharField(max_length=255, default=token_hex)
+    is_used = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.token
+
+
 # TODO: Typo error ;(
 class UserBalanceFilRecord(models.Model):
     class Meta:

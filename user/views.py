@@ -15,16 +15,17 @@ from rest_framework.response import Response
 
 from BefreeBingo import settings
 from .constants import FILL_TRANSACTION, BONUS_TRANSACTION
-from .models import User, AccessToken, UserBalanceFilRecord, Transaction
+from .models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken
 from .pagination import TransactionPagination
 from .permissions import IsAuthenticated
-from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer, TransactionSerializer, BalanceFillResponseSerializer, BalanceFillConfirmSerializer, UserUpdateSerializer
+from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer, TransactionSerializer, BalanceFillResponseSerializer, BalanceFillConfirmSerializer, UserUpdateSerializer, RecoverPasswordRequestSerializer, \
+    ChangePasswordSerializer
 from bets.serializers import BetSerializer
 from bets.models import Bet
 from djmoney.money import Money
+from .utils import get_client_ip, send_password_confirm_letter
 
 # Create your views here.
-from .utils import get_client_ip
 
 
 @method_decorator(swagger_auto_schema(
@@ -267,7 +268,7 @@ class FillBalanceAPIView(generics.CreateAPIView):
     operation_summary='Запрос на подтверждения пополнения баланса',
     responses={
         201: UserBalanceFillRecordSerializer(),
-    }
+    },
 ), name='post')
 class FillBalanceCallbackAPIView(generics.CreateAPIView):
     serializer_class = BalanceFillConfirmSerializer
@@ -345,6 +346,9 @@ class FillBalanceSuccessCallbackAPIView(views.APIView):
 
 # Deprecated
 class FillBalanceFailureCallbackAPIView(views.APIView):
+    """
+    (Deprecated)
+    """
     swagger_schema = None
 
     def get(self, *args, **kwargs):
@@ -388,3 +392,66 @@ class UserUpdateAPIView(generics.UpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class RecoverPasswordAPIView(generics.CreateAPIView):
+
+    serializer_class = RecoverPasswordRequestSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response({'status': 'ok'}, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        user = User.objects.get(email=serializer.data.get('email'))
+
+        send_password_confirm_letter(self.request, user)
+
+
+class CheckRecoverTokenAPIView(views.APIView):
+
+    def post(self, *args, **kwargs):
+        check_token = self.request.data.get('check_token', None)
+
+        if not check_token:
+            raise exceptions.ValidationError({
+                'check_token': ['Поле `check_token` обязательное']
+            })
+
+        try:
+            token_instance = PasswordRecoverToken.objects.get(token=check_token)
+        except PasswordRecoverToken.DoesNotExist:
+            raise exceptions.ValidationError({
+                'check_token': ['Токен не валидный']
+            })
+
+        if token_instance.is_used:
+            raise exceptions.ValidationError({
+                'check_token': ['Токен устарел']
+            })
+
+        return Response({'status': 'ok'})
+
+
+class ChangePasswordAPIView(generics.CreateAPIView):
+
+    serializer_class = ChangePasswordSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response({'status': 'ok'}, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        token_instance: PasswordRecoverToken = serializer.data.get('check_token')
+        token_instance.is_used = True
+        token_instance.save(update_fields=['is_used'])
+
+        password = make_password(serializer.data.get('password_confirm'))
+        token_instance.user.password = password
+        token_instance.user.save(update_fields=['password'])
