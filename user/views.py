@@ -448,7 +448,7 @@ class ChangePasswordAPIView(generics.CreateAPIView):
         return Response({'status': 'ok'}, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
-        token_instance: PasswordRecoverToken = serializer.data.get('check_token')
+        token_instance: PasswordRecoverToken = PasswordRecoverToken.objects.get(token=serializer.data.get('check_token'))
         token_instance.is_used = True
         token_instance.save(update_fields=['is_used'])
 
