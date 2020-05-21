@@ -452,6 +452,5 @@ class ChangePasswordAPIView(generics.CreateAPIView):
         token_instance.is_used = True
         token_instance.save(update_fields=['is_used'])
 
-        password = make_password(serializer.data.get('password_confirm'))
-        token_instance.user.password = password
-        token_instance.user.save(update_fields=['password'])
+        token_instance.user.set_password(serializer.data.get('password'))
+        token_instance.user.save()
