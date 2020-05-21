@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import re
+import smtplib
 from typing import Optional
 import hmac
 import requests
@@ -408,7 +409,12 @@ class RecoverPasswordAPIView(generics.CreateAPIView):
     def perform_create(self, serializer):
         user = User.objects.get(email=serializer.data.get('email'))
 
-        send_password_confirm_letter(self.request, user)
+        try:
+            send_password_confirm_letter(self.request, user)
+        except smtplib.SMTPServerDisconnected:
+            raise exceptions.ValidationError({'smtp': ['Почтовый сервис не отвечает. Попробуйте позже.']})
+        except ConnectionResetError:
+            raise exceptions.ValidationError({'smtp': ['Почтовый сервис не отвечает. Попробуйте позже.']})
 
 
 class CheckRecoverTokenAPIView(views.APIView):
