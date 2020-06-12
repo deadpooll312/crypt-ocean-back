@@ -1,9 +1,6 @@
-import datetime
-import hashlib
 import re
 import smtplib
 from typing import Optional
-import hmac
 import requests
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
@@ -15,7 +12,8 @@ from rest_framework import generics, status, views, exceptions
 from rest_framework.response import Response
 
 from BefreeBingo import settings
-from .constants import FILL_TRANSACTION, BONUS_TRANSACTION
+from .constants import BONUS_TRANSACTION
+from .mixins import BitchangeUtilsMixin
 from .models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken, UserTraffic
 from .pagination import TransactionPagination
 from .permissions import IsAuthenticated
@@ -126,7 +124,7 @@ class GetProfileAPIView(generics.RetrieveAPIView):
         201: BalanceFillResponseSerializer(),
     }
 ), name='post')
-class FillBalanceAPIView(generics.CreateAPIView):
+class FillBalanceAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
     """
         Registration
     """
@@ -134,56 +132,12 @@ class FillBalanceAPIView(generics.CreateAPIView):
     serializer_class = FillBalanceSerializer
     permission_classes = (IsAuthenticated,)
 
-    shop_id = settings.BITCHANGE_CONFIG.get('SHOP_ID', 'BlqWarhVLHmqA8DdPoZNK00xebYNDf')
-    shop_secret = settings.BITCHANGE_CONFIG.get('SHOP_SECRET', 'KSvP4AwZG5tYWf1wWuw0meL3QAdJOp')
     bit_change_url = settings.BITCHANGE_CONFIG.get('BASE_URL', 'https://api.bitchange.online/api/v1/create_order')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.record: Optional[UserBalanceFilRecord] = None
-
-    # # Deprecated
-    # def get_sign(self, serializer):
-    #     amount = str(self.record.amount)
-    #     currency = self.record.currency
-    #     shop_id = settings.BITCHANGE_CONFIG.get('SHOP_ID')
-    #     shop_order_id = self.record.id
-    #     shop_secret = settings.PIASTRIX_CONFIG.get('SHOP_SECRET')
-    #
-    #     sign_string = f'{amount}:{currency}:card_rub:{shop_id}:{shop_order_id}{shop_secret}'
-    #
-    #     return sha256(sign_string.encode()).hexdigest()
-    #
-    # # Deprecated
-    # def send_payment_creation_request(self, sign):
-    #     data = {
-    #         'amount': self.record.amount,
-    #         'currency': self.record.currency,
-    #         'shop_id': settings.PIASTRIX_CONFIG.get('SHOP_ID'),
-    #         'sign': sign,
-    #         'shop_order_id': self.record.id,
-    #         'payway': 'card_rub',
-    #     }
-    #
-    #     try:
-    #         response = requests.post(settings.PIASTRIX_CONFIG.get('BASE_URL'), json=data)
-    #     except requests.exceptions.BaseHTTPError:
-    #         raise exceptions.ValidationError({'piastrix': ['Сервис не отвечает']})
-    #
-    #     if response.status_code != status.HTTP_200_OK:
-    #         raise exceptions.ValidationError({'piastrix': [f'HTTP {response.status_code}: {response.text}']})
-    #
-    #     _json = response.json()
-    #
-    #     if not _json.get('result', False):
-    #         raise exceptions.ValidationError({'piastrix': [f'Код ошибки: {_json.get("error_code")}. Piastrix: {_json.get("message")}']})
-    #
-    #     _response = _json.get('data')
-    #     _response.update({
-    #         'email': self.request.user.email
-    #     })
-    #     return _response
 
     def get_callback_urls(self):
         protocol = 'https' if self.request.is_secure() else 'http'
@@ -192,18 +146,6 @@ class FillBalanceAPIView(generics.CreateAPIView):
         path = reverse('user:balance_fill_callback', kwargs={'record_id': self.record.id})
 
         return f'{site_url}{path}'
-
-    def get_bitchange_auth_headers(self):
-        nonce = datetime.datetime.now().microsecond
-
-        sign_str = f'{nonce}|{self.shop_id}|{self.shop_secret}'
-        sign = hmac.new(self.shop_secret.encode(), sign_str.encode(), hashlib.sha256).hexdigest()
-
-        return {
-            'C-Request-Nonce': f'{nonce}',
-            'C-Request-Signature': sign,
-            'C-Shop-Id': self.shop_id,
-        }
 
     def get_bitchange_response(self):
         data = {
@@ -271,9 +213,20 @@ class FillBalanceAPIView(generics.CreateAPIView):
         201: UserBalanceFillRecordSerializer(),
     },
 ), name='post')
-class FillBalanceCallbackAPIView(generics.CreateAPIView):
+class FillBalanceCallbackAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
     serializer_class = BalanceFillConfirmSerializer
     permission_classes = (IsAuthenticated,)
+
+    bitchange_url = 'https://api.bitchange.online/api/v1/order_details'
+    pixel_url = 'https://install.partners/Services/pixel' \
+                '?aid=839' \
+                '&pid={partner_id}' \
+                '&oid=839' \
+                '&sid={site_id}' \
+                '&geo={geo}' \
+                '&hid={click_id}' \
+                '&ip={ip}' \
+                '&cost={cost}'
 
     def create(self, *args, **kwargs):
         serializer = self.get_serializer(data=self.request.data)
@@ -283,6 +236,7 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView):
         return Response(record, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
+        order_id = serializer.data.get('shop_order_id')
         try:
             record = UserBalanceFilRecord.objects.prefetch_related('user').get(id=serializer.data.get('shop_order_id'))
         except UserBalanceFilRecord.DoesNotExist:
@@ -296,8 +250,13 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView):
 
         record.is_finished = True
 
+        self.check_payment(order_id, record)
+
         if serializer.data.get('status', 'failure') == 'success':
             self.add_balance_to_participants(record)
+
+            self.send_traffic_percent(record)
+
             return UserBalanceFillRecordSerializer(instance=record).data
 
         record.is_success = False
@@ -319,6 +278,67 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView):
             record.user.add_balance(bonus_percent, BONUS_TRANSACTION)
 
         return record
+
+    def check_payment(self, order_id, record: UserBalanceFilRecord):
+        headers = {
+            'Accept': '*/*',
+            'Content-Type': 'application/json'
+        }
+        headers.update(self.get_bitchange_auth_headers())
+
+        response = requests.post(self.bitchange_url, json={'order_id': order_id}, headers=headers)
+
+        if response.status_code not in [200, 201]:
+            raise exceptions.ValidationError({'shop_order_id': ['Сервера Bitchange не отвечают']})
+
+        data = response.json()
+
+        if data.get('order_status', None) is None:
+            raise exceptions.ValidationError({'shop_order_id': ['Bitchange не вернула статус транзакции']})
+
+        if data.get('order_status', None) in ['canceled', 'rejected']:
+            record.is_success = False
+            record.error_message = "Траназкция была отменена или отклонена"
+            record.save()
+            raise exceptions.ValidationError({'shop_order_id': ['Траназкция была отменена или отклонена']})
+
+        if data.get('order_status', None) in ['expired']:
+            raise exceptions.ValidationError({'shop_order_id': ['Ссылка устарела']})
+
+        if data.get('order_status', None) in ['new', 'pending']:
+            raise exceptions.ValidationError({'shop_order_id': ['Оплата ожидается! Попробуйте зайти на эту страницу позже!']})
+
+    def get_exchange_rates(self):
+        return requests.get('https://api.exchangeratesapi.io/latest?base=RUB&symbols=USD').json().get('rates')
+
+    def get_geolocation_by_ip(self, ip):
+        return requests.get(f'http://ip-api.com/json/{ip}').json().get('countryCode')
+
+    def send_traffic_percent(self, record: UserBalanceFilRecord):
+        ip = get_client_ip(self.request)
+
+        traffic_instance: UserTraffic = UserTraffic.objects.filter(ip=ip).first()
+
+        if traffic_instance:
+            percent = Money(record.amount, 'RUB') / 100 * 30
+
+            rates = self.get_exchange_rates()
+            calculated_percent = Money(percent * rates['USD'], 'USD')
+
+            target_url_with_params = self.pixel_url.format(
+                partner_id=traffic_instance.partner_id,
+                site_id=traffic_instance.site_id,
+                geo=self.get_geolocation_by_ip(ip),
+                click_id=traffic_instance.click_id,
+                ip=ip,
+                cost=calculated_percent
+            )
+
+            requests.get(target_url_with_params)
+
+            traffic_instance.balance_filled = True
+            traffic_instance.user = self.request.user
+            traffic_instance.save()
 
 
 # Deprecated
@@ -467,9 +487,17 @@ class TrackUserTrafficAPIView(generics.CreateAPIView):
     serializer_class = UserTrafficSerializer
 
     def perform_create(self, serializer):
-        UserTraffic.objects.create(
-            partner_id=serializer.validated_data.get('partner_id'),
-            click_id=serializer.validated_data.get('click_id'),
-            site_id=serializer.validated_data.get('site_id', None),
-            ip=get_client_ip(self.request)
-        )
+        traffic_instance: UserTraffic = UserTraffic.objects.filter(ip=get_client_ip(self.request)).first()
+
+        if not traffic_instance:
+            UserTraffic.objects.create(
+                partner_id=serializer.validated_data.get('partner_id'),
+                click_id=serializer.validated_data.get('click_id'),
+                site_id=serializer.validated_data.get('site_id', None),
+                ip=get_client_ip(self.request)
+            )
+        else:
+            traffic_instance.partner_id = serializer.validated_data.get('partner_id')
+            traffic_instance.click_id = serializer.validated_data.get('click_id')
+            traffic_instance.site_id = serializer.validated_data.get('site_id', None)
+            traffic_instance.save()

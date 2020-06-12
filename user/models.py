@@ -131,7 +131,7 @@ class UserTraffic(models.Model):
     click_id = models.CharField(max_length=255, verbose_name='Click ID (clickid)')
     site_id = models.CharField(max_length=255, verbose_name='Site ID (subid)', null=True, blank=True)
 
-    ip = models.CharField(max_length=16, verbose_name='User IP')
+    ip = models.CharField(max_length=16, verbose_name='User IP', unique=True)
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата редактирования')
