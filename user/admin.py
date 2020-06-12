@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import User, UserBalanceFilRecord, Transaction, BalanceFillConfiguration
+from django.urls import reverse_lazy
+from django.utils.safestring import mark_safe
+
+from .models import User, UserBalanceFilRecord, Transaction, BalanceFillConfiguration, UserTraffic
 from django.contrib.auth.admin import UserAdmin as AbstractUserAdmin
 from django.utils.translation import gettext, gettext_lazy as _
 from django.contrib.auth.admin import Group
@@ -66,6 +69,36 @@ class BalanceFillConfigurationAdmin(admin.ModelAdmin):
 class BalanceFillRecordAdmin(admin.ModelAdmin):
     list_display = ['user', 'amount', 'currency', 'created_at', 'is_success']
     readonly_fields = ['token', 'error_message', 'user', 'amount', 'currency', 'is_success']
+
+
+@admin.register(UserTraffic)
+class UserTrafficAdmin(admin.ModelAdmin):
+
+    list_display = ['ip', 'partner_id', 'click_id', 'site_id', 'created_at', 'balance_filled']
+    readonly_fields = ['ip', 'partner_id', 'click_id', 'site_id', 'created_at', 'updated_at', 'user_display', 'balance_filled', 'user']
+
+    fields = ('ip', 'partner_id', 'click_id', 'site_id', 'created_at', 'updated_at', 'user_display', 'balance_filled')
+
+    list_filter = ['created_at', 'balance_filled']
+
+    search_fields = ['partner_id', 'click_id', 'ip', 'site_id']
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request):
+        return False
+
+    # def has_change_permission(self, request, obj=None):
+    #     return False
+
+    def user_display(self, obj):
+        if obj.user:
+            url = reverse_lazy('admin:user_user_change', args=(obj.user.id,))
+            return mark_safe(f'<a href="{url}#/tab/inline_0/" target="_blank">{obj.user.email}</a>')
+        return '-'
+
+    user_display.short_description = "Пользователь"
 
 
 admin.site.unregister(Group)

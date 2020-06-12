@@ -3,7 +3,7 @@ from typing import Optional
 from djmoney.money import Money
 from rest_framework import serializers, exceptions
 import decimal
-from user.models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken
+from user.models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken, UserTraffic
 from user.utils import get_min_fill_amount
 
 
@@ -146,3 +146,9 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise exceptions.ValidationError('Токен устарел')
 
         return token_instance
+
+
+class UserTrafficSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserTraffic
+        fields = ('partner_id', 'click_id', 'site_id')

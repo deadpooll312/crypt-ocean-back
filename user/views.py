@@ -16,11 +16,11 @@ from rest_framework.response import Response
 
 from BefreeBingo import settings
 from .constants import FILL_TRANSACTION, BONUS_TRANSACTION
-from .models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken
+from .models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken, UserTraffic
 from .pagination import TransactionPagination
 from .permissions import IsAuthenticated
 from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer, TransactionSerializer, BalanceFillResponseSerializer, BalanceFillConfirmSerializer, UserUpdateSerializer, RecoverPasswordRequestSerializer, \
-    ChangePasswordSerializer
+    ChangePasswordSerializer, UserTrafficSerializer
 from bets.serializers import BetSerializer
 from bets.models import Bet
 from djmoney.money import Money
@@ -460,3 +460,16 @@ class ChangePasswordAPIView(generics.CreateAPIView):
 
         token_instance.user.set_password(serializer.data.get('password'))
         token_instance.user.save()
+
+
+class TrackUserTrafficAPIView(generics.CreateAPIView):
+
+    serializer_class = UserTrafficSerializer
+
+    def perform_create(self, serializer):
+        UserTraffic.objects.create(
+            partner_id=serializer.validated_data.get('partner_id'),
+            click_id=serializer.validated_data.get('click_id'),
+            site_id=serializer.validated_data.get('site_id', None),
+            ip=get_client_ip(self.request)
+        )

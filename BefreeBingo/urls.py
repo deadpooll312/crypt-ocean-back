@@ -19,6 +19,7 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
 from bets.views import IndexView
+from user.views import TrackUserTrafficAPIView
 
 from BefreeBingo import settings
 
@@ -42,7 +43,9 @@ urlpatterns = [
     path('api/', include([
         path('v1/', include([
             path('auth/', include(('user.urls', 'user'))),
-            path('bets/', include(('bets.urls', 'bets')))
+            path('bets/', include(('bets.urls', 'bets'))),
+
+            path('traffic/track/', TrackUserTrafficAPIView.as_view(), name='traffic_tracker')
         ])),
     ])),
 
