@@ -151,4 +151,4 @@ class ChangePasswordSerializer(serializers.Serializer):
 class UserTrafficSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTraffic
-        fields = ('partner_id', 'click_id', 'site_id')
+        fields = ('partner_id', 'click_id', 'site_id', 'source')

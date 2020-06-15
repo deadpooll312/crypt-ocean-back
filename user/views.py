@@ -319,7 +319,7 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
 
         traffic_instance: UserTraffic = UserTraffic.objects.filter(ip=ip).first()
 
-        if traffic_instance:
+        if traffic_instance and traffic_instance.source == 'mkt':
             percent = Money(record.amount, 'RUB') / 100 * 30
 
             rates = self.get_exchange_rates()
@@ -494,7 +494,8 @@ class TrackUserTrafficAPIView(generics.CreateAPIView):
                 partner_id=serializer.validated_data.get('partner_id'),
                 click_id=serializer.validated_data.get('click_id'),
                 site_id=serializer.validated_data.get('site_id', None),
-                ip=get_client_ip(self.request)
+                ip=get_client_ip(self.request),
+                source=serializer.validated_data.get('source')
             )
         else:
             traffic_instance.partner_id = serializer.validated_data.get('partner_id')

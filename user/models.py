@@ -130,6 +130,7 @@ class UserTraffic(models.Model):
     partner_id = models.CharField(max_length=255, verbose_name='Partner ID (pid)')
     click_id = models.CharField(max_length=255, verbose_name='Click ID (clickid)')
     site_id = models.CharField(max_length=255, verbose_name='Site ID (subid)', null=True, blank=True)
+    source = models.CharField(max_length=10, default='mkt', verbose_name='Source (src)')
 
     ip = models.CharField(max_length=16, verbose_name='User IP', unique=True)
 
