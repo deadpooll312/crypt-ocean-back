@@ -169,7 +169,7 @@ class TrafficPercentPaymentLog(models.Model):
 
         return mark_safe('''
                 <span>
-                <b>Запись о траффике отсутствует. Предоставлены последние найденные записи:</b>
+                <b>Запись о траффике отсутствует. Предоставлены последние найденные записи:</b><br />
                 pid = {partner_id},<br/>
                 clickId = {click_id},<br/>
                 subid = {site_id},<br/>
