@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse_lazy
 from django.utils.safestring import mark_safe
 
-from .models import User, UserBalanceFilRecord, Transaction, BalanceFillConfiguration, UserTraffic
+from .models import User, UserBalanceFilRecord, Transaction, BalanceFillConfiguration, UserTraffic, TrafficPercentPaymentLog
 from django.contrib.auth.admin import UserAdmin as AbstractUserAdmin
 from django.utils.translation import gettext, gettext_lazy as _
 from django.contrib.auth.admin import Group
@@ -99,6 +99,49 @@ class UserTrafficAdmin(admin.ModelAdmin):
         return '-'
 
     user_display.short_description = "Пользователь"
+
+
+@admin.register(TrafficPercentPaymentLog)
+class TrafficPercentPaymentLogAdmin(admin.ModelAdmin):
+    list_display = ['get_traffic_info', 'cost', 'created_at']
+
+    readonly_fields = (
+        'get_traffic_info',
+        'cost',
+        'link',
+        'created_at'
+    )
+
+    fields = (
+        'get_traffic_info',
+        'cost',
+        'link',
+        'created_at'
+    )
+
+    def get_traffic_info(self, obj: TrafficPercentPaymentLog):
+        return mark_safe('''
+        <span>
+        {<br />
+        &nbps;&nbps;pid = {partner_id},<br/>
+        &nbps;&nbps;clickId = {click_id},<br/>
+        &nbps;&nbps;subid = {site_id},<br/>
+        &nbps;&nbps;source = {src},<br/>
+        &nbps;&nbps;ip = {ip}<br />
+        }
+        </span>
+        '''.format(
+            partner_id=obj.traffic.partner_id,
+            click_id=obj.traffic.click_id,
+            site_id=obj.traffic.site_id,
+            src=obj.traffic.get_source_display(),
+            ip=obj.traffic.ip
+        ))
+
+    get_traffic_info.short_description = 'Траффик'
+
+    def has_add_permission(self, request):
+        return False
 
 
 admin.site.unregister(Group)
