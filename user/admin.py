@@ -122,13 +122,13 @@ class TrafficPercentPaymentLogAdmin(admin.ModelAdmin):
     def get_traffic_info(self, obj: TrafficPercentPaymentLog):
         return mark_safe('''
         <span>
-        {<br />
+        (<br />
         &nbps;&nbps;pid = {partner_id},<br/>
         &nbps;&nbps;clickId = {click_id},<br/>
         &nbps;&nbps;subid = {site_id},<br/>
         &nbps;&nbps;source = {src},<br/>
         &nbps;&nbps;ip = {ip}<br />
-        }
+        )
         </span>
         '''.format(
             partner_id=obj.traffic.partner_id,
