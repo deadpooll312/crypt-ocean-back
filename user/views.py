@@ -526,4 +526,5 @@ class TrackUserTrafficAPIView(generics.CreateAPIView):
             traffic_instance.partner_id = serializer.validated_data.get('partner_id')
             traffic_instance.click_id = serializer.validated_data.get('click_id')
             traffic_instance.site_id = serializer.validated_data.get('site_id', None)
+            traffic_instance.source = serializer.validated_data.get('source')
             traffic_instance.save()
