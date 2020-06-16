@@ -323,6 +323,9 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
             percent = Money(record.amount, 'RUB') / 100 * 30
 
             rates = self.get_exchange_rates()
+            print("===================== RATES ====================")
+            print(rates)
+            print("===================== RATES ====================")
             calculated_percent = Money(percent * rates['USD'], 'USD')
 
             target_url_with_params = self.pixel_url.format(
@@ -333,6 +336,10 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
                 ip=ip,
                 cost=calculated_percent
             )
+
+            print("===================== URL ====================")
+            print(target_url_with_params)
+            print("===================== URL ====================")
 
             requests.get(target_url_with_params)
 
