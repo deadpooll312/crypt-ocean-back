@@ -119,27 +119,6 @@ class TrafficPercentPaymentLogAdmin(admin.ModelAdmin):
         'created_at'
     )
 
-    def get_traffic_info(self, obj: TrafficPercentPaymentLog):
-        return mark_safe('''
-        <span>
-        (<br />
-        &nbsp;&nbsp;pid = {partner_id},<br/>
-        &nbsp;&nbsp;clickId = {click_id},<br/>
-        &nbsp;&nbsp;subid = {site_id},<br/>
-        &nbsp;&nbsp;source = {src},<br/>
-        &nbsp;&nbsp;ip = {ip}<br />
-        )
-        </span>
-        '''.format(
-            partner_id=obj.traffic.partner_id,
-            click_id=obj.traffic.click_id,
-            site_id=obj.traffic.site_id,
-            src=obj.traffic.get_source_display(),
-            ip=obj.traffic.ip
-        ))
-
-    get_traffic_info.short_description = 'Траффик'
-
     def has_add_permission(self, request):
         return False
 

@@ -1,6 +1,7 @@
 import uuid
 from secrets import token_hex
 
+from django.utils.safestring import mark_safe
 from djmoney.money import Money
 
 from user.constants import TRANSACTION_TYPE_CHOICES, FILL_TRANSACTION
@@ -160,3 +161,22 @@ class TrafficPercentPaymentLog(models.Model):
 
     def __str__(self):
         return self.traffic.ip
+
+    def get_traffic_info(self):
+        return mark_safe('''
+                <span>
+                (<br />
+                &nbsp;&nbsp;pid = {partner_id},<br/>
+                &nbsp;&nbsp;clickId = {click_id},<br/>
+                &nbsp;&nbsp;subid = {site_id},<br/>
+                &nbsp;&nbsp;source = {src},<br/>
+                &nbsp;&nbsp;ip = {ip}<br />
+                )
+                </span>
+                '''.format(
+            partner_id=self.traffic.partner_id,
+            click_id=self.traffic.click_id,
+            site_id=self.traffic.site_id,
+            src=self.traffic.get_source_display(),
+            ip=self.traffic.ip
+        ))
