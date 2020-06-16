@@ -87,7 +87,7 @@ class TrafficMixin:
         target_url_with_params = self.cityads_url.format(
             order_id=record.token,
             click_id=traffic_instance.click_id,
-            commision=calculated_percent,
+            cost=calculated_percent,
         )
 
         print("===================== URL ====================")
