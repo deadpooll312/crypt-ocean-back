@@ -6,7 +6,7 @@ import requests
 from djmoney.money import Money
 
 from BefreeBingo import settings
-from user.models import UserBalanceFilRecord, UserTraffic
+from user.models import UserBalanceFilRecord, UserTraffic, TrafficPercentPaymentLog
 
 
 class BitchangeUtilsMixin:
@@ -71,15 +71,23 @@ class TrafficMixin:
 
         traffic_instance.balance_filled = True
         traffic_instance.user = self.request.user
-        traffic_instance.save()
+        traffic_instance.save(update_fields=['balance_filled', 'user'])
+
+        TrafficPercentPaymentLog.objects.create(
+            traffic=traffic_instance,
+            cost=Money(calculated_percent, 'USD'),
+            link=target_url_with_params
+        )
 
     def city_ads_percent(self, record: UserBalanceFilRecord, traffic_instance: UserTraffic, _):
         percent = Money(record.amount, 'RUB') / 100 * 30
 
+        calculated_percent = self.exchange_money(percent)
+
         target_url_with_params = self.cityads_url.format(
-            order_id=record.id,
+            order_id=record.token,
             click_id=traffic_instance.click_id,
-            commision=self.exchange_money(percent),
+            commision=calculated_percent,
         )
 
         print("===================== URL ====================")
@@ -91,6 +99,12 @@ class TrafficMixin:
         traffic_instance.balance_filled = True
         traffic_instance.user = self.request.user
         traffic_instance.save()
+
+        TrafficPercentPaymentLog.objects.create(
+            traffic=traffic_instance,
+            cost=Money(calculated_percent, 'USD'),
+            link=target_url_with_params
+        )
 
     def get_exchange_rates(self):
         return requests.get('https://api.exchangeratesapi.io/latest?base=RUB&symbols=USD').json().get('rates')

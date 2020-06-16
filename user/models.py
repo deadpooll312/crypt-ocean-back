@@ -145,3 +145,18 @@ class UserTraffic(models.Model):
 
     def __str__(self):
         return f'{self.ip}: {{"partner_id": {self.partner_id}, "click_id": {self.click_id}}}'
+
+
+class TrafficPercentPaymentLog(models.Model):
+    class Meta:
+        verbose_name = 'Лог выплат на траффик'
+        verbose_name_plural = 'Лог выплат на траффик'
+
+    traffic = models.ForeignKey(to=UserTraffic, on_delete=models.PROTECT, verbose_name='Пользователь')
+    cost = MoneyField(max_digits=14, decimal_places=2, default_currency='USD', default=0)
+    link = models.TextField(verbose_name='Ссылка')
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+
+    def __str__(self):
+        return self.traffic.ip
