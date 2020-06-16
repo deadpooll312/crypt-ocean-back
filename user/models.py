@@ -135,7 +135,7 @@ class UserTraffic(models.Model):
         ('cityads', 'CityAds')
     ))
 
-    ip = models.CharField(max_length=16, verbose_name='User IP', unique=True)
+    ip = models.CharField(max_length=16, verbose_name='User IP')
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата редактирования')

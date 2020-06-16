@@ -8,6 +8,7 @@ from django.contrib.auth.hashers import make_password
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status, views, exceptions
 from rest_framework.response import Response
@@ -209,6 +210,7 @@ class FillBalanceAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
         )
 
 
+# ============ Deprecated ==================
 @method_decorator(swagger_auto_schema(
     operation_summary='Запрос на подтверждения пополнения баланса',
     responses={
@@ -263,7 +265,6 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
 
 
 class CheckPaymentStatusAPIView(generics.CreateAPIView, BitchangeUtilsMixin, TrafficMixin):
-
     serializer_class = BalanceFillConfirmSerializer
     permission_classes = (IsAuthenticated,)
 
@@ -346,15 +347,16 @@ class CheckPaymentStatusAPIView(generics.CreateAPIView, BitchangeUtilsMixin, Tra
         return True, 'Оплачено'
 
     def send_traffic_percent(self, record: UserBalanceFilRecord):
-        ip = get_client_ip(self.request)
+        traffic_id = self.request.data.get('trid', None)
 
-        traffic_instance: UserTraffic = UserTraffic.objects.filter(ip=ip).first()
+        if traffic_id:
+            traffic_instance: UserTraffic = UserTraffic.objects.filter(id=traffic_id).first()
 
-        if traffic_instance:
-            send_percent = self.get_percent_method_map().get(traffic_instance.source, None)
+            if traffic_instance:
+                send_percent = self.get_percent_method_map().get(traffic_instance.source, None)
 
-            if send_percent:
-                send_percent(record, traffic_instance, ip)
+                if send_percent:
+                    send_percent(record, traffic_instance)
 
     def add_balance_to_participants(self, record: UserBalanceFilRecord):
         target_balance = Money(record.amount, 'RUB')
@@ -370,7 +372,7 @@ class CheckPaymentStatusAPIView(generics.CreateAPIView, BitchangeUtilsMixin, Tra
         return record
 
 
-# Deprecated
+# ============ Deprecated ==================
 class FillBalanceSuccessCallbackAPIView(views.APIView):
     swagger_schema = None
 
@@ -394,7 +396,7 @@ class FillBalanceSuccessCallbackAPIView(views.APIView):
         return HttpResponseRedirect(f'{settings.FRONTEND_URL}/success/?record_signature={record.token}')
 
 
-# Deprecated
+# ============ Deprecated ==================
 class FillBalanceFailureCallbackAPIView(views.APIView):
     """
     (Deprecated)
@@ -511,20 +513,28 @@ class ChangePasswordAPIView(generics.CreateAPIView):
 class TrackUserTrafficAPIView(generics.CreateAPIView):
     serializer_class = UserTrafficSerializer
 
-    def perform_create(self, serializer):
-        traffic_instance: UserTraffic = UserTraffic.objects.filter(ip=get_client_ip(self.request)).first()
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        traffic_instance = self.perform_create(serializer)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response({'value': traffic_instance.id}, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer) -> UserTraffic:
+        ip = get_client_ip(self.request)
+
+        traffic_instance = UserTraffic.objects.filter(ip=ip).first()
 
         if not traffic_instance:
-            UserTraffic.objects.create(
-                partner_id=serializer.validated_data.get('partner_id'),
-                click_id=serializer.validated_data.get('click_id'),
-                site_id=serializer.validated_data.get('site_id', None),
-                ip=get_client_ip(self.request),
-                source=serializer.validated_data.get('source')
-            )
-        else:
-            traffic_instance.partner_id = serializer.validated_data.get('partner_id')
-            traffic_instance.click_id = serializer.validated_data.get('click_id')
-            traffic_instance.site_id = serializer.validated_data.get('site_id', None)
-            traffic_instance.source = serializer.validated_data.get('source')
-            traffic_instance.save()
+            traffic_instance = UserTraffic()
+
+        traffic_instance.partner_id = serializer.validated_data.get('partner_id')
+        traffic_instance.click_id = serializer.validated_data.get('click_id')
+        traffic_instance.site_id = serializer.validated_data.get('site_id', None)
+        traffic_instance.ip = get_client_ip(self.request)
+        traffic_instance.source = serializer.validated_data.get('source')
+        traffic_instance.save()
+
+        return traffic_instance

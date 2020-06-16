@@ -7,6 +7,7 @@ from djmoney.money import Money
 
 from BefreeBingo import settings
 from user.models import UserBalanceFilRecord, UserTraffic, TrafficPercentPaymentLog
+from user.utils import get_client_ip
 
 
 class BitchangeUtilsMixin:
@@ -49,7 +50,8 @@ class TrafficMixin:
             'cityads': self.city_ads_percent
         }
 
-    def mkt_percent(self, record: UserBalanceFilRecord, traffic_instance: UserTraffic, ip):
+    def mkt_percent(self, record: UserBalanceFilRecord, traffic_instance: UserTraffic):
+        ip = get_client_ip(self.request)
         percent = Money(record.amount, 'RUB') / 100 * 30
 
         calculated_percent = self.exchange_money(percent)
@@ -79,7 +81,7 @@ class TrafficMixin:
             link=target_url_with_params
         )
 
-    def city_ads_percent(self, record: UserBalanceFilRecord, traffic_instance: UserTraffic, _):
+    def city_ads_percent(self, record: UserBalanceFilRecord, traffic_instance: UserTraffic):
         percent = Money(record.amount, 'RUB') / 100 * 30
 
         calculated_percent = self.exchange_money(percent)
