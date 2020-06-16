@@ -156,6 +156,7 @@ class TrafficPercentPaymentLog(models.Model):
     traffic = models.ForeignKey(to=UserTraffic, on_delete=models.PROTECT, verbose_name='Пользователь')
     cost = MoneyField(max_digits=14, decimal_places=2, default_currency='USD', default=0)
     link = models.TextField(verbose_name='Ссылка')
+    traffic_info = models.TextField(verbose_name='Инфо о траффике', null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
 
@@ -163,15 +164,17 @@ class TrafficPercentPaymentLog(models.Model):
         return self.traffic.ip
 
     def get_traffic_info(self):
+        if self.traffic_info:
+            return mark_safe(self.traffic_info)
+
         return mark_safe('''
                 <span>
-                (<br />
+                <b>Запись о траффике отсутствует. Предоставлены последние найденные записи:</b>
                 &nbsp;&nbsp;pid = {partner_id},<br/>
                 &nbsp;&nbsp;clickId = {click_id},<br/>
                 &nbsp;&nbsp;subid = {site_id},<br/>
                 &nbsp;&nbsp;source = {src},<br/>
                 &nbsp;&nbsp;ip = {ip}<br />
-                )
                 </span>
                 '''.format(
             partner_id=self.traffic.partner_id,
