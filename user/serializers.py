@@ -70,7 +70,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 class UserBalanceFillRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserBalanceFilRecord
-        fields = ('amount', 'currency', 'is_success', 'created_at', 'error_message')
+        fields = ('amount', 'currency', 'is_success', 'created_at', 'error_message', 'is_finished')
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -101,8 +101,8 @@ class BalanceFillResponseSerializer(serializers.Serializer):
 
 
 class BalanceFillConfirmSerializer(serializers.Serializer):
-    shop_order_id = serializers.IntegerField()
-    status = serializers.ChoiceField(choices=(('success', 'Успех'), ('failure', 'Не удача')))
+    shop_order_id = serializers.CharField()
+    status = serializers.ChoiceField(choices=(('success', 'Успех'), ('failure', 'Не удача')), allow_blank=True, allow_null=True, required=False)
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):

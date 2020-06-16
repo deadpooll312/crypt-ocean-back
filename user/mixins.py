@@ -2,7 +2,11 @@ import datetime
 import hashlib
 import hmac
 
+import requests
+from djmoney.money import Money
+
 from BefreeBingo import settings
+from user.models import UserBalanceFilRecord, UserTraffic
 
 
 class BitchangeUtilsMixin:
@@ -20,3 +24,84 @@ class BitchangeUtilsMixin:
             'C-Request-Signature': sign,
             'C-Shop-Id': self.shop_id,
         }
+
+
+class TrafficMixin:
+    pixel_url = 'https://install.partners/Services/pixel' \
+                '?aid=839' \
+                '&pid={partner_id}' \
+                '&oid=839' \
+                '&sid={site_id}' \
+                '&geo={geo}' \
+                '&hid={click_id}' \
+                '&ip={ip}' \
+                '&cost={cost}'
+
+    cityads_url = 'http://cityads.ru/service/postback/' \
+                  '?order_id={order_id}' \
+                  '&click_id={click_id}' \
+                  '&commission={cost}' \
+                  '&currency=USD'
+
+    def get_percent_method_map(self):
+        return {
+            'mkt': self.mkt_percent,
+            'cityads': self.city_ads_percent
+        }
+
+    def mkt_percent(self, record: UserBalanceFilRecord, traffic_instance: UserTraffic, ip):
+        percent = Money(record.amount, 'RUB') / 100 * 30
+
+        calculated_percent = self.exchange_money(percent)
+
+        target_url_with_params = self.pixel_url.format(
+            partner_id=traffic_instance.partner_id,
+            site_id=traffic_instance.site_id,
+            geo=self.get_geolocation_by_ip(ip),
+            click_id=traffic_instance.click_id,
+            ip=ip,
+            cost=calculated_percent
+        )
+
+        print("===================== URL ====================")
+        print(target_url_with_params)
+        print("===================== URL ====================")
+
+        requests.get(target_url_with_params)
+
+        traffic_instance.balance_filled = True
+        traffic_instance.user = self.request.user
+        traffic_instance.save()
+
+    def city_ads_percent(self, record: UserBalanceFilRecord, traffic_instance: UserTraffic, _):
+        percent = Money(record.amount, 'RUB') / 100 * 30
+
+        target_url_with_params = self.cityads_url.format(
+            order_id=record.id,
+            click_id=traffic_instance.click_id,
+            commision=self.exchange_money(percent),
+        )
+
+        print("===================== URL ====================")
+        print(target_url_with_params)
+        print("===================== URL ====================")
+
+        requests.get(target_url_with_params)
+
+        traffic_instance.balance_filled = True
+        traffic_instance.user = self.request.user
+        traffic_instance.save()
+
+    def get_exchange_rates(self):
+        return requests.get('https://api.exchangeratesapi.io/latest?base=RUB&symbols=USD').json().get('rates')
+
+    def get_geolocation_by_ip(self, ip):
+        return requests.get(f'http://ip-api.com/json/{ip}').json().get('countryCode')
+
+    def exchange_money(self, amount: Money):
+        rates = self.get_exchange_rates()
+        print("===================== RATES ====================")
+        print(rates)
+        print(amount)
+        print("===================== RATES ====================")
+        return Money(float(amount.amount) * rates['USD'], 'USD').amount

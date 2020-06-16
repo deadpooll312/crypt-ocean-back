@@ -22,7 +22,8 @@ urlpatterns = [
 
             path('success/', views.FillBalanceSuccessCallbackAPIView.as_view(), name='balance_fill_success'),
             path('failure/', views.FillBalanceFailureCallbackAPIView.as_view(), name='balance_fill_failure'),
-            path('callback/', views.FillBalanceCallbackAPIView.as_view(), name='balance_fill_callback')
+            path('callback/', views.FillBalanceCallbackAPIView.as_view(), name='balance_fill_callback'),
+            path('check/status/', views.CheckPaymentStatusAPIView.as_view(), name='check_payment_status')
         ])),
 
         path('history/', views.UserFillHistoryAPIView.as_view(), name='balance_history'),

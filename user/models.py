@@ -6,7 +6,7 @@ from djmoney.money import Money
 from user.constants import TRANSACTION_TYPE_CHOICES, FILL_TRANSACTION
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from bets.utils import get_random_number
+from bets.utils import get_random_number, get_random_string
 from djmoney.models.fields import MoneyField
 
 
@@ -80,10 +80,10 @@ class UserBalanceFilRecord(models.Model):
     currency = models.CharField(max_length=255, verbose_name='Валюта')
 
     is_success = models.BooleanField(default=False, verbose_name='Успешно пополнено?')
-    error_message = models.TextField(verbose_name='Текст ошибки', null=True, blank=True)
+    error_message = models.TextField(verbose_name='Сообщение', null=True, blank=True)
 
     created_at = models.DateTimeField(verbose_name='Дата создания', auto_now_add=True)
-    token = models.CharField(max_length=255, verbose_name='Токен проверки', default=uuid.uuid4, unique=True)
+    token = models.CharField(max_length=255, verbose_name='Токен проверки', default=get_random_string, unique=True)
     is_finished = models.BooleanField(default=False, verbose_name='Оплата проведена до конца?')
 
     def __str__(self):
@@ -130,7 +130,10 @@ class UserTraffic(models.Model):
     partner_id = models.CharField(max_length=255, verbose_name='Partner ID (pid)')
     click_id = models.CharField(max_length=255, verbose_name='Click ID (clickid)')
     site_id = models.CharField(max_length=255, verbose_name='Site ID (subid)', null=True, blank=True)
-    source = models.CharField(max_length=10, default='mkt', verbose_name='Source (src)')
+    source = models.CharField(max_length=10, default='mkt', verbose_name='Source (src)', choices=(
+        ('mkt', 'Pixel'),
+        ('cityads', 'CityAds')
+    ))
 
     ip = models.CharField(max_length=16, verbose_name='User IP', unique=True)
 

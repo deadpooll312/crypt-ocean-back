@@ -2,6 +2,7 @@ import re
 import smtplib
 from typing import Optional
 import requests
+import threading
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.http import HttpResponseRedirect
@@ -13,7 +14,7 @@ from rest_framework.response import Response
 
 from BefreeBingo import settings
 from .constants import BONUS_TRANSACTION
-from .mixins import BitchangeUtilsMixin
+from .mixins import BitchangeUtilsMixin, TrafficMixin
 from .models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken, UserTraffic
 from .pagination import TransactionPagination
 from .permissions import IsAuthenticated
@@ -23,6 +24,7 @@ from bets.serializers import BetSerializer
 from bets.models import Bet
 from djmoney.money import Money
 from .utils import get_client_ip, send_password_confirm_letter
+
 
 # Create your views here.
 
@@ -153,14 +155,14 @@ class FillBalanceAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
             "amount": self.record.amount,
             "currency": "RUDT",
             "currency_receive": "RUDT",
-            "order_id": self.record.id,
+            "order_id": self.record.token,
             "order_description": "Пополнение баланса на befree.bingo",
             # "return_url": self.get_callback_urls(),
             "ip": get_client_ip(self.request),
             "phone_number": re.sub(re.compile(r'\s', re.IGNORECASE), '', self.record.user.phone_number or ''),
             "email": self.record.user.email,
-            "success_url": settings.FRONTEND_URL + '/success?record_token=' + str(self.record.token),
-            "failed_url": settings.FRONTEND_URL + '/failure?record_token=' + str(self.record.token),
+            "success_url": settings.FRONTEND_URL + '/balance/fill/finish/',
+            "failed_url": settings.FRONTEND_URL + '/balance/fill/finish/',
         }
 
         headers = {
@@ -236,7 +238,6 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
         return Response(record, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
-        order_id = serializer.data.get('shop_order_id')
         try:
             record = UserBalanceFilRecord.objects.prefetch_related('user').get(id=serializer.data.get('shop_order_id'))
         except UserBalanceFilRecord.DoesNotExist:
@@ -250,12 +251,8 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
 
         record.is_finished = True
 
-        self.check_payment(order_id, record)
-
         if serializer.data.get('status', 'failure') == 'success':
             self.add_balance_to_participants(record)
-
-            self.send_traffic_percent(record)
 
             return UserBalanceFillRecordSerializer(instance=record).data
 
@@ -264,22 +261,59 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
         record.save(update_fields=['is_finished', 'is_success', 'error_message'])
         return UserBalanceFillRecordSerializer(instance=record).data
 
-    def add_balance_to_participants(self, record: UserBalanceFilRecord):
-        target_balance = Money(record.amount, 'RUB')
 
-        record.is_success = True
-        record.user.add_balance(target_balance)
-        record.save(update_fields=['is_finished', 'is_success'])
+class CheckPaymentStatusAPIView(generics.CreateAPIView, BitchangeUtilsMixin, TrafficMixin):
 
-        if record.user.related_referer:
-            bonus_percent = target_balance / 100 * settings.REFERRAL_BONUS_PERCENT
+    serializer_class = BalanceFillConfirmSerializer
+    permission_classes = (IsAuthenticated,)
 
-            record.user.related_referer.add_balance(bonus_percent, BONUS_TRANSACTION, bonus_from=record.user)
-            record.user.add_balance(bonus_percent, BONUS_TRANSACTION)
+    bitchange_url = 'https://api.bitchange.online/api/v1/order_details'
 
-        return record
+    def create(self, *args, **kwargs):
+        serializer = self.get_serializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
 
-    def check_payment(self, order_id, record: UserBalanceFilRecord):
+        record = self.perform_create(serializer)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(record, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        try:
+            record = UserBalanceFilRecord.objects.prefetch_related('user').get(token=serializer.data.get('shop_order_id'))
+        except UserBalanceFilRecord.DoesNotExist:
+            raise exceptions.ValidationError({'shop_order_id': ['Транзакция не найдена']})
+
+        if record.is_finished:
+            raise exceptions.ValidationError({'shop_order_id': ['Эта ссылка устарела']})
+
+        if record.user != self.request.user:
+            raise exceptions.PermissionDenied({'shop_order_id': ['Эта транзакция была совершена под другим аккаунтом']})
+
+        is_paid, message = self.check_payment(order_id=serializer.data.get('shop_order_id'))
+
+        if is_paid is not None:
+            record.is_finished = True
+            record.is_success = is_paid
+            record.error_message = message
+            record.save(update_fields=['is_success', 'error_message', 'is_finished'])
+        else:
+            record.error_message = message
+            record.save(update_fields=['error_message'])
+
+        response = UserBalanceFillRecordSerializer(instance=record).data
+
+        if is_paid:
+            for thread in [
+                threading.Thread(target=self.send_traffic_percent, args=(record,)),
+                threading.Thread(target=self.add_balance_to_participants, args=(record,))
+            ]:
+                thread.start()
+
+        return response
+
+    def check_payment(self, order_id):
+
         headers = {
             'Accept': '*/*',
             'Content-Type': 'application/json'
@@ -298,58 +332,42 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
         print("============== BITCHNAGE CHECK STATUS RESPONSE ================")
 
         if data.get('order_status', None) is None:
-            raise exceptions.ValidationError({'shop_order_id': ['Bitchange не вернула статус транзакции']})
+            return False, 'Bitchange не вернула статус транзакции'
 
-        if data.get('order_status', None) in ['canceled', 'rejected']:
-            record.is_success = False
-            record.error_message = "Траназкция была отменена или отклонена"
-            record.save()
-            raise exceptions.ValidationError({'shop_order_id': ['Траназкция была отменена или отклонена']})
+        if data.get('order_status') in ['canceled', 'rejected']:
+            return False, 'Траназкция была отменена или отклонена'
 
-        if data.get('order_status', None) in ['expired']:
-            raise exceptions.ValidationError({'shop_order_id': ['Ссылка устарела']})
+        if data.get('order_status') in ['expired']:
+            return False, 'Ссылка устарела'
 
-        if data.get('order_status', None) in ['new', 'pending']:
-            raise exceptions.ValidationError({'shop_order_id': ['Оплата ожидается! Попробуйте зайти на эту страницу позже!']})
+        if data.get('order_status') in ['new', 'pending']:
+            return None, 'Обрабатывается...'
 
-    def get_exchange_rates(self):
-        return requests.get('https://api.exchangeratesapi.io/latest?base=RUB&symbols=USD').json().get('rates')
-
-    def get_geolocation_by_ip(self, ip):
-        return requests.get(f'http://ip-api.com/json/{ip}').json().get('countryCode')
+        return True, 'Оплачено'
 
     def send_traffic_percent(self, record: UserBalanceFilRecord):
         ip = get_client_ip(self.request)
 
         traffic_instance: UserTraffic = UserTraffic.objects.filter(ip=ip).first()
 
-        if traffic_instance and traffic_instance.source == 'mkt':
-            percent = Money(record.amount, 'RUB') / 100 * 30
+        if traffic_instance:
+            send_percent = self.get_percent_method_map().get(traffic_instance.source, None)
 
-            rates = self.get_exchange_rates()
-            print("===================== RATES ====================")
-            print(rates)
-            print("===================== RATES ====================")
-            calculated_percent = Money(percent * rates['USD'], 'USD')
+            if send_percent:
+                send_percent(record, traffic_instance, ip)
 
-            target_url_with_params = self.pixel_url.format(
-                partner_id=traffic_instance.partner_id,
-                site_id=traffic_instance.site_id,
-                geo=self.get_geolocation_by_ip(ip),
-                click_id=traffic_instance.click_id,
-                ip=ip,
-                cost=calculated_percent
-            )
+    def add_balance_to_participants(self, record: UserBalanceFilRecord):
+        target_balance = Money(record.amount, 'RUB')
 
-            print("===================== URL ====================")
-            print(target_url_with_params)
-            print("===================== URL ====================")
+        record.user.add_balance(target_balance)
 
-            requests.get(target_url_with_params)
+        if record.user.related_referer:
+            bonus_percent = target_balance / 100 * settings.REFERRAL_BONUS_PERCENT
 
-            traffic_instance.balance_filled = True
-            traffic_instance.user = self.request.user
-            traffic_instance.save()
+            record.user.related_referer.add_balance(bonus_percent, BONUS_TRANSACTION, bonus_from=record.user)
+            record.user.add_balance(bonus_percent, BONUS_TRANSACTION)
+
+        return record
 
 
 # Deprecated
@@ -418,7 +436,6 @@ class UserTransactionHistoryAPIView(generics.ListAPIView):
 
 
 class UserUpdateAPIView(generics.UpdateAPIView):
-
     serializer_class = UserUpdateSerializer
     permission_classes = (IsAuthenticated,)
 
@@ -427,7 +444,6 @@ class UserUpdateAPIView(generics.UpdateAPIView):
 
 
 class RecoverPasswordAPIView(generics.CreateAPIView):
-
     serializer_class = RecoverPasswordRequestSerializer
 
     def create(self, request, *args, **kwargs):
@@ -474,7 +490,6 @@ class CheckRecoverTokenAPIView(views.APIView):
 
 
 class ChangePasswordAPIView(generics.CreateAPIView):
-
     serializer_class = ChangePasswordSerializer
 
     def create(self, request, *args, **kwargs):
@@ -494,7 +509,6 @@ class ChangePasswordAPIView(generics.CreateAPIView):
 
 
 class TrackUserTrafficAPIView(generics.CreateAPIView):
-
     serializer_class = UserTrafficSerializer
 
     def perform_create(self, serializer):

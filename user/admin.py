@@ -74,12 +74,12 @@ class BalanceFillRecordAdmin(admin.ModelAdmin):
 @admin.register(UserTraffic)
 class UserTrafficAdmin(admin.ModelAdmin):
 
-    list_display = ['ip', 'partner_id', 'click_id', 'site_id', 'created_at', 'balance_filled']
-    readonly_fields = ['ip', 'partner_id', 'click_id', 'site_id', 'created_at', 'updated_at', 'user_display', 'balance_filled', 'user']
+    list_display = ['ip', 'partner_id', 'click_id', 'site_id', 'created_at', 'source']
+    readonly_fields = ['ip', 'partner_id', 'click_id', 'site_id', 'created_at', 'updated_at', 'user_display', 'balance_filled', 'user', 'source']
 
-    fields = ('ip', 'partner_id', 'click_id', 'site_id', 'created_at', 'updated_at', 'user_display', 'balance_filled')
+    fields = ('ip', 'partner_id', 'click_id', 'site_id', 'source', 'created_at', 'updated_at', 'user_display', 'balance_filled')
 
-    list_filter = ['created_at', 'balance_filled']
+    list_filter = ['created_at', 'balance_filled', 'source']
 
     search_fields = ['partner_id', 'click_id', 'ip', 'site_id']
 
