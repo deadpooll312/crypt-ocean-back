@@ -293,6 +293,10 @@ class FillBalanceCallbackAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
 
         data = response.json()
 
+        print("============== BITCHNAGE CHECK STATUS RESPONSE ================")
+        print(data)
+        print("============== BITCHNAGE CHECK STATUS RESPONSE ================")
+
         if data.get('order_status', None) is None:
             raise exceptions.ValidationError({'shop_order_id': ['Bitchange не вернула статус транзакции']})
 
