@@ -123,11 +123,11 @@ class TrafficPercentPaymentLogAdmin(admin.ModelAdmin):
         return mark_safe('''
         <span>
         (<br />
-        &nbps;&nbps;pid = {partner_id},<br/>
-        &nbps;&nbps;clickId = {click_id},<br/>
-        &nbps;&nbps;subid = {site_id},<br/>
-        &nbps;&nbps;source = {src},<br/>
-        &nbps;&nbps;ip = {ip}<br />
+        &nbsp;&nbsp;pid = {partner_id},<br/>
+        &nbsp;&nbsp;clickId = {click_id},<br/>
+        &nbsp;&nbsp;subid = {site_id},<br/>
+        &nbsp;&nbsp;source = {src},<br/>
+        &nbsp;&nbsp;ip = {ip}<br />
         )
         </span>
         '''.format(
