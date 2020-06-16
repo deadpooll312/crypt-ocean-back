@@ -75,25 +75,10 @@ class TrafficMixin:
         traffic_instance.user = self.request.user
         traffic_instance.save(update_fields=['balance_filled', 'user'])
 
-        TrafficPercentPaymentLog.objects.create(
-            traffic=traffic_instance,
-            cost=Money(calculated_percent, 'USD'),
-            link=target_url_with_params,
-            traffic_info='''
-                <span>
-                &nbsp;&nbsp;pid = {partner_id},<br/>
-                &nbsp;&nbsp;clickId = {click_id},<br/>
-                &nbsp;&nbsp;subid = {site_id},<br/>
-                &nbsp;&nbsp;source = {src},<br/>
-                &nbsp;&nbsp;ip = {ip}<br />
-                </span>
-                '''.format(
-                partner_id=traffic_instance.partner_id,
-                click_id=traffic_instance.click_id,
-                site_id=traffic_instance.site_id,
-                src=traffic_instance.get_source_display(),
-                ip=ip
-            )
+        self.log_traffic_percent(
+            traffic_instance,
+            Money(calculated_percent, 'USD'),
+            target_url_with_params
         )
 
     def city_ads_percent(self, record: UserBalanceFilRecord, traffic_instance: UserTraffic):
@@ -117,19 +102,26 @@ class TrafficMixin:
         traffic_instance.user = self.request.user
         traffic_instance.save()
 
+        self.log_traffic_percent(
+            traffic_instance,
+            Money(calculated_percent, 'USD'),
+            target_url_with_params
+        )
+
+    def log_traffic_percent(self, traffic_instance, cost, link):
         TrafficPercentPaymentLog.objects.create(
             traffic=traffic_instance,
-            cost=Money(calculated_percent, 'USD'),
-            link=target_url_with_params,
+            cost=cost,
+            link=link,
             traffic_info='''
-                        <span>
-                        &nbsp;&nbsp;pid = {partner_id},<br/>
-                        &nbsp;&nbsp;clickId = {click_id},<br/>
-                        &nbsp;&nbsp;subid = {site_id},<br/>
-                        &nbsp;&nbsp;source = {src},<br/>
-                        &nbsp;&nbsp;ip = {ip}<br />
-                        </span>
-                        '''.format(
+                                <span>
+                                pid = {partner_id},<br/>
+                                clickId = {click_id},<br/>
+                                subid = {site_id},<br/>
+                                source = {src},<br/>
+                                ip = {ip}<br />
+                                </span>
+                                '''.format(
                 partner_id=traffic_instance.partner_id,
                 click_id=traffic_instance.click_id,
                 site_id=traffic_instance.site_id,

@@ -170,11 +170,11 @@ class TrafficPercentPaymentLog(models.Model):
         return mark_safe('''
                 <span>
                 <b>Запись о траффике отсутствует. Предоставлены последние найденные записи:</b>
-                &nbsp;&nbsp;pid = {partner_id},<br/>
-                &nbsp;&nbsp;clickId = {click_id},<br/>
-                &nbsp;&nbsp;subid = {site_id},<br/>
-                &nbsp;&nbsp;source = {src},<br/>
-                &nbsp;&nbsp;ip = {ip}<br />
+                pid = {partner_id},<br/>
+                clickId = {click_id},<br/>
+                subid = {site_id},<br/>
+                source = {src},<br/>
+                ip = {ip}<br />
                 </span>
                 '''.format(
             partner_id=self.traffic.partner_id,
