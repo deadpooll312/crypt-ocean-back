@@ -27,9 +27,9 @@ class Command(BaseCommand):
             )
 
             stream_writer.writerow(fields)
-            instances = UserTraffic.objects.values_list(fields)
+            instances = UserTraffic.objects.values_list(*fields)
 
             for item in instances.all():
                 stream_writer.writerow(item)
 
-            self.stdout.write(f'{instances.count()} rows written!')
+            self.stdout.write(f'{instances.count()} rows written!', self.style.SUCCESS)
