@@ -114,10 +114,13 @@ class Transaction(models.Model):
 
 class BalanceFillConfiguration(models.Model):
     class Meta:
-        verbose_name = 'Настройка пополнений баланса'
-        verbose_name_plural = 'Настройка пополнений баланса'
+        verbose_name = 'Настройки сайта'
+        verbose_name_plural = 'Настройки сайта'
 
     min_fill_amount = MoneyField(max_digits=14, decimal_places=2, default_currency='RUB', default=0, verbose_name='Минимальная сумма пополнения')
+
+    page_header = models.TextField(verbose_name='HEADER', null=True, blank=True, help_text='Скрипты &lt;head&gt;&lt;/head&gt;')
+    page_footer = models.TextField(verbose_name='FOOTER', null=True, blank=True, help_text='Скрипты перед &lt;/body&gt;')
 
     def __str__(self):
         return 'Настройка пополнений баланса'

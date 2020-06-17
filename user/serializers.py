@@ -3,7 +3,7 @@ from typing import Optional
 from djmoney.money import Money
 from rest_framework import serializers, exceptions
 import decimal
-from user.models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken, UserTraffic
+from user.models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken, UserTraffic, BalanceFillConfiguration
 from user.utils import get_min_fill_amount
 
 
@@ -152,3 +152,9 @@ class UserTrafficSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTraffic
         fields = ('partner_id', 'click_id', 'site_id', 'source')
+
+
+class CommonSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BalanceFillConfiguration
+        fields = ('page_header', 'page_footer')

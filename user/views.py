@@ -16,15 +16,15 @@ from rest_framework.response import Response
 from BefreeBingo import settings
 from .constants import BONUS_TRANSACTION
 from .mixins import BitchangeUtilsMixin, TrafficMixin
-from .models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken, UserTraffic
+from .models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken, UserTraffic, BalanceFillConfiguration
 from .pagination import TransactionPagination
 from .permissions import IsAuthenticated
 from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer, TransactionSerializer, BalanceFillResponseSerializer, BalanceFillConfirmSerializer, UserUpdateSerializer, RecoverPasswordRequestSerializer, \
-    ChangePasswordSerializer, UserTrafficSerializer
+    ChangePasswordSerializer, UserTrafficSerializer, CommonSettingsSerializer
 from bets.serializers import BetSerializer
 from bets.models import Bet
 from djmoney.money import Money
-from .utils import get_client_ip, send_password_confirm_letter
+from .utils import get_client_ip, send_password_confirm_letter, get_common_settings
 
 
 # Create your views here.
@@ -538,3 +538,11 @@ class TrackUserTrafficAPIView(generics.CreateAPIView):
         traffic_instance.save()
 
         return traffic_instance
+
+
+class CommonSettingsAPIView(generics.RetrieveAPIView):
+
+    serializer_class = CommonSettingsSerializer
+
+    def get_object(self):
+        return get_common_settings()

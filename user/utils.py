@@ -18,6 +18,12 @@ def get_min_fill_amount() -> Money:
     return configuration.min_fill_amount
 
 
+def get_common_settings() -> BalanceFillConfiguration:
+    configuration, _ = BalanceFillConfiguration.objects.get_or_create(id=1)
+
+    return configuration
+
+
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
