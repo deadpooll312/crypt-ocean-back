@@ -8,6 +8,8 @@ from djmoney.money import Money
 from BefreeBingo import settings
 from user.models import UserBalanceFilRecord, UserTraffic, TrafficPercentPaymentLog
 from user.utils import get_client_ip
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 
 class BitchangeUtilsMixin:
@@ -143,3 +145,15 @@ class TrafficMixin:
         print(amount)
         print("===================== RATES ====================")
         return Money(float(amount.amount) * rates['USD'], 'USD').amount
+
+
+class EnsureCsrfCookieMixin:
+    """
+    Ensures that the CSRF cookie will be passed to the client.
+    NOTE:
+        This should be the left-most mixin of a view.
+    """
+
+    @method_decorator(ensure_csrf_cookie)
+    def dispatch(self, *args, **kwargs):
+        return super(EnsureCsrfCookieMixin, self).dispatch(*args, **kwargs)

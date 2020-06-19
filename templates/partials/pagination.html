@@ -1,0 +1,31 @@
+{% load pagination_helper %}
+
+{% with pagination.paginator.num_pages as num_pages %}
+    {% with pagination.number as current_page_number %}
+        {% set 0 as dots_counter %}
+        {% set 0 as dot_number %}
+        {% if pagination.paginator.num_pages > 1 %}
+            <ul class="uk-pagination" uk-margin>
+                {% if pagination.has_previous %}
+                    <li class="uk-flex uk-flex-middle"><a href="{% get_prepared_url request.get_full_path 'page' %}page={{ pagination.previous_page_number }}" id="prev-page"><span uk-pagination-previous></span></a></li>
+                {% endif %}
+                {% for page in pagination.paginator.page_range %}
+                    {% show_link page num_pages current_page_number as is_showing_link  %}
+
+                    {% if is_showing_link %}
+                        {% set 0 as dots_counter %}
+                        <li{% if page == pagination.number %} class="uk-active"{% endif %}><a href="{% get_prepared_url request.get_full_path 'page' %}page={{ page }}"><span>{{ page }}</span></a></li>
+                    {% else %}
+                        {% if dots_counter == 0 %}
+                            {% set 1 as dots_counter %}
+                            <li class="uk-disabled"><span>...</span></li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                {% if pagination.has_next %}
+                    <li class="uk-flex uk-flex-middle"><a href="{% get_prepared_url request.get_full_path 'page' %}page={{ pagination.next_page_number }}" id="next-page"><span uk-pagination-next></span></a></li>
+                {% endif %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+{% endwith %}

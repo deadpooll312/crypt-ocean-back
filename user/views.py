@@ -3,19 +3,22 @@ import smtplib
 from typing import Optional
 import requests
 import threading
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.hashers import make_password
 from django.http import HttpResponseRedirect
+from django.shortcuts import render
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.utils import timezone
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+from django.views import View
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status, views, exceptions
 from rest_framework.response import Response
 
 from BefreeBingo import settings
 from .constants import BONUS_TRANSACTION
-from .mixins import BitchangeUtilsMixin, TrafficMixin
+from .mixins import BitchangeUtilsMixin, TrafficMixin, EnsureCsrfCookieMixin
 from .models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken, UserTraffic, BalanceFillConfiguration
 from .pagination import TransactionPagination
 from .permissions import IsAuthenticated
@@ -25,6 +28,7 @@ from bets.serializers import BetSerializer
 from bets.models import Bet
 from djmoney.money import Money
 from .utils import get_client_ip, send_password_confirm_letter, get_common_settings
+from .forms import LoginForm
 
 
 # Create your views here.
@@ -541,8 +545,54 @@ class TrackUserTrafficAPIView(generics.CreateAPIView):
 
 
 class CommonSettingsAPIView(generics.RetrieveAPIView):
-
     serializer_class = CommonSettingsSerializer
 
     def get_object(self):
         return get_common_settings()
+
+
+class UserTrafficTrackerListView(EnsureCsrfCookieMixin, LoginRequiredMixin, ListView):
+    template_name = 'user-traffic.html'
+    model = UserTraffic
+    context_object_name = 'traffics'
+    paginate_by = 50
+    ordering = ('-updated_at',)
+
+
+class LoginView(EnsureCsrfCookieMixin, View):
+    form_class = LoginForm
+
+    def get_context(self):
+        return {
+            'form': self.form_class()
+        }
+
+    def get(self, *args, **kwargs):
+        context = kwargs.get('context', self.get_context())
+        return render(self.request, 'login.html', context)
+
+    def post(self, *args, **kwargs):
+        form = self.form_class(self.request.POST)
+
+        kwargs['context'] = {
+            'form': form
+        }
+
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+
+            user: User = authenticate(email=email, password=password)
+
+            if not user:
+                kwargs['context']['errors'] = 'Неверный пароль!'
+                return self.get(*args, **kwargs)
+
+            if not user.is_active:
+                kwargs['context']['errors'] = 'Ваш профиль не активен! Обратитесь к администрации сайта!'
+                return self.get(*args, **kwargs)
+
+            login(request=self.request, user=user)
+            return HttpResponseRedirect('/')
+
+        return self.get(*args, **kwargs)

@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'djmoney',
     'rest_framework_swagger',
     'drf_yasg',
+    'widget_tweaks',
 
     # Apps
     'user',
@@ -212,6 +213,7 @@ JET_SIDE_MENU_COMPACT = True
 
 REFERRAL_BONUS_PERCENT = 5
 
+LOGIN_URL = '/login/'
 
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.yandex.ru'

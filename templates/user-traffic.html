@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Трекер траффика{% endblock %}
+
+{% block content %}
+    <nav class="uk-navbar-container" uk-navbar>
+        <div class="uk-navbar-right">
+
+            <ul class="uk-navbar-nav">
+                <li><a href="{% url 'logout' %}">Выход</a></li>
+            </ul>
+
+        </div>
+
+    </nav>
+    <main role="main" style="padding-top: 25px; padding-bottom: 25px;">
+        <div class="uk-container">
+            <table class="uk-table uk-table-striped">
+                <thead>
+                <tr>
+                    <th>partner_id</th>
+                    <th>click_id</th>
+                    <th>site_id</th>
+                    <th>source</th>
+                    <th>ip</th>
+                    <th>created_at</th>
+                    <th>updated_at</th>
+                    <th>balance_filled</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in page_obj.object_list %}
+                    <tr>
+                        <td>{{ item.partner_id }}</td>
+                        <td>{{ item.click_id }}</td>
+                        <td>{{ item.site_id }}</td>
+                        <td>
+                            <span class="uk-badge">
+                                {{ item.get_source_display }}
+                            </span>
+                        </td>
+                        <td>{{ item.ip }}</td>
+                        <td>{{ item.created_at|date }} {{ item.created_at|time }}</td>
+                        <td>{{ item.updated_at|date }} {{ item.updated_at|time }}</td>
+                        <td>{{ item.balance_filled }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <div class="uk-flex uk-flex-right">
+                {% include 'partials/pagination.html' with pagination=page_obj %}
+            </div>
+        </div>
+    </main>
+{% endblock %}

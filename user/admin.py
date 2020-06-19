@@ -55,6 +55,13 @@ class UserAdmin(AbstractUserAdmin):
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
 
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('email', 'password1', 'password2'),
+        }),
+    )
+
     inlines = (UserBalanceFillRecordInline, TransactionInline)
 
 
@@ -74,7 +81,7 @@ class BalanceFillRecordAdmin(admin.ModelAdmin):
 @admin.register(UserTraffic)
 class UserTrafficAdmin(admin.ModelAdmin):
 
-    list_display = ['ip', 'partner_id', 'click_id', 'site_id', 'created_at', 'source']
+    list_display = ['ip', 'partner_id', 'click_id', 'created_at', 'updated_at', 'source']
     readonly_fields = ['ip', 'partner_id', 'click_id', 'site_id', 'created_at', 'updated_at', 'user_display', 'balance_filled', 'user', 'source']
 
     fields = ('ip', 'partner_id', 'click_id', 'site_id', 'source', 'created_at', 'updated_at', 'user_display', 'balance_filled')

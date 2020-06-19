@@ -17,9 +17,8 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from rest_framework import permissions
-from bets.views import IndexView
-from user.views import TrackUserTrafficAPIView, CommonSettingsAPIView
+from django.contrib.auth.views import logout_then_login
+from user.views import TrackUserTrafficAPIView, CommonSettingsAPIView, UserTrafficTrackerListView, LoginView
 
 from BefreeBingo import settings
 
@@ -51,7 +50,9 @@ urlpatterns = [
         ])),
     ])),
 
-    path('', IndexView.as_view(), name='index')
+    path('login/', LoginView.as_view(), name='login'),
+    path('logout/', logout_then_login, name='logout'),
+    path('', UserTrafficTrackerListView.as_view(), name='index')
 ]
 
 if settings.DEBUG:
