@@ -175,7 +175,10 @@ class FillBalanceAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
             'Content-Type': 'application/json'
         }
         headers.update(self.get_bitchange_auth_headers())
-        response = requests.post(self.bit_change_url, json=data, headers=headers)
+        try:
+            response = requests.post(self.bit_change_url, json=data, headers=headers)
+        except:
+            raise exceptions.ValidationError({'bitchange': ['Сервер Bitchange не отвечает!']})
         return self.format_bitchange_response(response.json())
 
     def format_bitchange_response(self, response):
