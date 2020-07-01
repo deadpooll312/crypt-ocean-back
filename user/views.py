@@ -169,7 +169,7 @@ class FillBalanceAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
             "success_url": settings.FRONTEND_URL + '/balance/fill/finish/',
             "failed_url": settings.FRONTEND_URL + '/balance/fill/finish/',
         }
-
+        print(data)
         headers = {
             'Accept': '*/*',
             'Content-Type': 'application/json'
