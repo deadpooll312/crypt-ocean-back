@@ -8,9 +8,9 @@ from user.utils import get_min_fill_amount
 
 
 class RegisterSerializer(serializers.Serializer):
-    full_name = serializers.CharField()
+    full_name = serializers.CharField(allow_blank=True, allow_null=True, required=False)
     email = serializers.EmailField()
-    phone_number = serializers.CharField()
+    phone_number = serializers.CharField(allow_blank=True, allow_null=True, required=False)
     password = serializers.CharField()
     promo_code = serializers.CharField(allow_blank=True, allow_null=True, required=False)
 
