@@ -186,3 +186,35 @@ class TrafficPercentPaymentLog(models.Model):
             src=self.traffic.get_source_display(),
             ip=self.traffic.ip
         ))
+
+
+class UserClickTracker(models.Model):
+    class Meta:
+        verbose_name_plural = 'Трекер кликов'
+        verbose_name = 'Клик'
+
+    ip = models.CharField(max_length=16, verbose_name='IP')
+    area = models.CharField(max_length=255, verbose_name='Место клика', choices=(
+        ('fill', 'Пополнение баланса'),
+        ('sign-up', 'Регистрация')
+    ))
+    traffic = models.ForeignKey(
+        to=UserTraffic,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name='Траффик'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+
+    def __str__(self):
+        return f'{self.ip} => {self.get_area_display()}'
+
+    def save(self, *args, **kwargs):
+        traffic = UserTraffic.objects.filter(ip=self.ip).first()
+
+        if traffic:
+            self.traffic_id = traffic.id
+
+        super(UserClickTracker, self).save(*args, **kwargs)
+

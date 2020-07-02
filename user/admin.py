@@ -2,7 +2,9 @@ from django.contrib import admin
 from django.urls import reverse_lazy
 from django.utils.safestring import mark_safe
 
-from .models import User, UserBalanceFilRecord, Transaction, BalanceFillConfiguration, UserTraffic, TrafficPercentPaymentLog
+from .models import User, UserBalanceFilRecord, Transaction,\
+    BalanceFillConfiguration, UserTraffic, TrafficPercentPaymentLog,\
+    UserClickTracker
 from django.contrib.auth.admin import UserAdmin as AbstractUserAdmin
 from django.utils.translation import gettext, gettext_lazy as _
 from django.contrib.auth.admin import Group
@@ -125,6 +127,17 @@ class TrafficPercentPaymentLogAdmin(admin.ModelAdmin):
         'link',
         'created_at'
     )
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(UserClickTracker)
+class UserClickTrackerAdmin(admin.ModelAdmin):
+    list_display = ['ip', 'area', 'traffic', 'created_at']
+    list_filter = ['area', 'created_at']
+
+    readonly_fields = ['ip', 'area', 'traffic', 'created_at']
 
     def has_add_permission(self, request):
         return False

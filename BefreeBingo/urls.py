@@ -18,7 +18,8 @@ from django.urls import path, include
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.contrib.auth.views import logout_then_login
-from user.views import TrackUserTrafficAPIView, CommonSettingsAPIView, UserTrafficTrackerListView, LoginView
+from user.views import TrackUserTrafficAPIView, CommonSettingsAPIView,\
+    UserTrafficTrackerListView, LoginView, RegisterUserClickAPIView
 
 from BefreeBingo import settings
 
@@ -45,7 +46,7 @@ urlpatterns = [
             path('bets/', include(('bets.urls', 'bets'))),
 
             path('traffic/track/', TrackUserTrafficAPIView.as_view(), name='traffic_tracker'),
-
+            path('traffic/click/track/', RegisterUserClickAPIView.as_view(), name='click_tracker'),
             path('common/settings/', CommonSettingsAPIView.as_view(), name='common_settings')
         ])),
     ])),

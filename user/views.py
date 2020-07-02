@@ -19,7 +19,8 @@ from rest_framework.response import Response
 from BefreeBingo import settings
 from .constants import BONUS_TRANSACTION
 from .mixins import BitchangeUtilsMixin, TrafficMixin, EnsureCsrfCookieMixin
-from .models import User, AccessToken, UserBalanceFilRecord, Transaction, PasswordRecoverToken, UserTraffic, BalanceFillConfiguration
+from .models import User, AccessToken, UserBalanceFilRecord,\
+    Transaction, PasswordRecoverToken, UserTraffic, UserClickTracker
 from .pagination import TransactionPagination
 from .permissions import IsAuthenticated
 from .serializers import RegisterSerializer, LoginSerializer, TokenSerializer, FillBalanceSerializer, ProfileSerializer, UserBalanceFillRecordSerializer, TransactionSerializer, BalanceFillResponseSerializer, BalanceFillConfirmSerializer, UserUpdateSerializer, RecoverPasswordRequestSerializer, \
@@ -169,7 +170,7 @@ class FillBalanceAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
             "success_url": settings.FRONTEND_URL + '/balance/fill/finish/',
             "failed_url": settings.FRONTEND_URL + '/balance/fill/finish/',
         }
-        print(data)
+
         headers = {
             'Accept': '*/*',
             'Content-Type': 'application/json'
@@ -599,3 +600,17 @@ class LoginView(EnsureCsrfCookieMixin, View):
             return HttpResponseRedirect('/')
 
         return self.get(*args, **kwargs)
+
+
+class RegisterUserClickAPIView(generics.CreateAPIView):
+
+    def create(self, request, *args, **kwargs):
+        click_instance = UserClickTracker.objects.create(
+            ip=get_client_ip(self.request),
+            area=self.request.data.get('type')
+        )
+        return Response({
+            'id': click_instance.id,
+            'ip': click_instance.ip,
+            'type': click_instance.area
+        }, status=status.HTTP_201_CREATED)
