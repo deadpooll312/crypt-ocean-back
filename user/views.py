@@ -186,6 +186,8 @@ class FillBalanceAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
         except Exception as e:
             print(f'Request failed: {e.__str__()}')
             raise exceptions.ValidationError({'bitchange': ['Сервер Bitchange не отвечает!']})
+        except requests.Timeout:
+            raise exceptions.ValidationError({'bitchange': ['Сервер Bitchange: timeout error']})
         return self.format_bitchange_response(response.json())
 
     def format_bitchange_response(self, response):
