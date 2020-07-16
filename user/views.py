@@ -1,4 +1,5 @@
 import re
+import json
 import smtplib
 from typing import Optional
 import requests
@@ -176,9 +177,13 @@ class FillBalanceAPIView(generics.CreateAPIView, BitchangeUtilsMixin):
             'Content-Type': 'application/json'
         }
         headers.update(self.get_bitchange_auth_headers())
+        print(f'Headers: {json.dumps(headers)}')
+        print(f'Body: {json.dumps(data)}')
         try:
             response = requests.post(self.bit_change_url, json=data, headers=headers)
-        except:
+            print(f'Response: {response.json()}')
+        except Exception as e:
+            print(f'Request failed: {e.__str__()}')
             raise exceptions.ValidationError({'bitchange': ['Сервер Bitchange не отвечает!']})
         return self.format_bitchange_response(response.json())
 
