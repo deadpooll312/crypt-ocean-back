@@ -1,17 +1,40 @@
 {% extends 'base.html' %}
 
+{% load static %}
+{% load widget_tweaks %}
+
 {% block title %}Трекер траффика{% endblock %}
 
+{% block styles %}
+    <link href="{% static 'css/datepicker.min.css' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
 {% block content %}
-    <nav class="uk-navbar-container" uk-navbar>
-        <div class="uk-navbar-right">
-            <ul class="uk-navbar-nav">
-                <li><a href="{% url 'logout' %}">Выход</a></li>
-            </ul>
-        </div>
-    </nav>
+    {% include 'components/navigation.html' %}
+
     <main role="main" style="padding-top: 25px; padding-bottom: 25px;">
         <div class="uk-container">
+            <form action='' method='get' name='source' class="uk-grid uk-child-width-1-4 uk-form" uk-grid>
+                <div>
+                    SOURCE
+                    {% render_field user_traffic_filter.form.source onchange='{ this.form.submit(); }' class='uk-select' %}
+
+                </div>
+                <div>
+                    BALANCE_FILLED
+                    {% render_field user_traffic_filter.form.balance_filled onchange='{ this.form.submit(); }' class='uk-select' %}
+
+                </div>
+                <div>
+                    CREATED_AT
+                    {% render_field user_traffic_filter.form.created_at onchange='{ this.form.submit(); }' class='uk-input datetime-picker' data-date-format="yyyy-mm-dd"  data-time-format='hh:ii' autocomplete='off' %}
+                </div>
+                <div>
+                    UPDATED_AT
+                    {% render_field user_traffic_filter.form.updated_at onchange='{ this.form.submit(); }' class='uk-input datetime-picker' data-date-format="yyyy-mm-dd"  data-time-format='hh:ii' autocomplete='off' %}
+                </div>
+            </form>
+
             <table class="uk-table uk-table-striped">
                 <thead>
                 <tr>
@@ -26,11 +49,11 @@
                 </tr>
                 </thead>
                 <tbody>
-                {% for item in page_obj.object_list %}
+                {% for item in object_list %}
                     <tr>
                         <td>{{ item.partner_id }}</td>
                         <td>{{ item.click_id }}</td>
-                        <td>{{ item.site_id }}</td>
+                        <td>{% if item.site_id %}{{ item.site_id }}{% else %}-{% endif %}</td>
                         <td>
                             <span class="uk-badge">
                                 {{ item.get_source_display }}
@@ -49,4 +72,15 @@
             </div>
         </div>
     </main>
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'js/datepicker.min.js' %}"></script>
+
+    <script type="text/javascript">
+        $('.datetime-picker').datepicker({
+            timepicker: true,
+            language: 'ru',
+        });
+    </script>
 {% endblock %}

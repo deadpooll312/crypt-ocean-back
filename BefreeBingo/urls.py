@@ -18,8 +18,8 @@ from django.urls import path, include
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.contrib.auth.views import logout_then_login
-from user.views import TrackUserTrafficAPIView, CommonSettingsAPIView,\
-    UserTrafficTrackerListView, LoginView, RegisterUserClickAPIView
+from user.views import TrackUserTrafficAPIView, CommonSettingsAPIView, \
+    UserTrafficTrackerListView, LoginView, RegisterUserClickAPIView, UserClickTrackerListView
 
 from BefreeBingo import settings
 
@@ -53,7 +53,8 @@ urlpatterns = [
 
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', logout_then_login, name='logout'),
-    path('', UserTrafficTrackerListView.as_view(), name='index')
+    path('', UserTrafficTrackerListView.as_view(), name='index'),
+    path('clicks/', UserClickTrackerListView.as_view(), name='user_clicks')
 ]
 
 if settings.DEBUG:

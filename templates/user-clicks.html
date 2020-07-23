@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Трекер кликов{% endblock %}
+
+{% block styles %}
+    <link href="{% static 'css/datepicker.min.css' %}" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block content %}
+    {% include 'components/navigation.html' %}
+
+    <main role="main" style="padding-top: 25px; padding-bottom: 25px;">
+        <div class="uk-container">
+        <form action='' method='get' name='source' class="uk-grid uk-child-width-1-4 uk-form" uk-grid>
+                <div>
+                    SOURCE
+                    {% render_field user_click_traffic_filter.form.area onchange='{ this.form.submit(); }' class='uk-select' %}
+                </div>
+                <div>
+                    CREATED_AT
+                    {% render_field user_click_traffic_filter.form.created_at onchange='{ this.form.submit(); }' class='uk-input datetime-picker' data-date-format="yyyy-mm-dd"  data-time-format='hh:ii' autocomplete='off' %}
+                </div>
+            </form>
+
+            <table class="uk-table uk-table-striped">
+                <thead>
+                <tr>
+                    <th>ip</th>
+                    <th>area</th>
+                    <th>traffic</th>
+                    <th>created_at</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in page_obj.object_list %}
+                    <tr>
+                        <td>{{ item.ip }}</td>
+                        <td>{{ item.get_area_display }}</td>
+                        <td>{% if item.traffic %}{{ item.traffic }}{% else %}-{% endif %}</td>
+                        <td>{{ item.created_at }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <div class="uk-flex uk-flex-right">
+                {% include 'partials/pagination.html' with pagination=page_obj %}
+            </div>
+        </div>
+    </main>
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'js/datepicker.min.js' %}"></script>
+
+    <script type="text/javascript">
+        $('.datetime-picker').datepicker({
+            timepicker: true,
+            language: 'ru',
+        });
+    </script>
+{% endblock %}

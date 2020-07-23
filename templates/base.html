@@ -1,9 +1,13 @@
+{% load static %}
+
 <html lang="ru">
 <head>
     <title>{% block title %}{% endblock %} | BEFREE.BINGO</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.5.4/dist/css/uikit.min.css"/>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}"/>
+    {% block styles %}{% endblock %}
 </head>
 
 <body>
@@ -16,5 +20,6 @@
         integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/uikit@3.5.4/dist/js/uikit.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/uikit@3.5.4/dist/js/uikit-icons.min.js"></script>
+{% block js  %}{% endblock %}
 </body>
 </html>

@@ -19,6 +19,7 @@ from rest_framework.response import Response
 
 from BefreeBingo import settings
 from .constants import BONUS_TRANSACTION
+from .filters import UserTrafficFilter, UserClickFilter
 from .mixins import BitchangeUtilsMixin, TrafficMixin, EnsureCsrfCookieMixin
 from .models import User, AccessToken, UserBalanceFilRecord,\
     Transaction, PasswordRecoverToken, UserTraffic, UserClickTracker
@@ -566,9 +567,37 @@ class CommonSettingsAPIView(generics.RetrieveAPIView):
 class UserTrafficTrackerListView(EnsureCsrfCookieMixin, LoginRequiredMixin, ListView):
     template_name = 'user-traffic.html'
     model = UserTraffic
-    context_object_name = 'traffics'
     paginate_by = 50
     ordering = ('-updated_at',)
+    filter_class = UserTrafficFilter
+
+    def get_context_data(self, *args, **kwargs):
+        user_traffic_filter = self.filter_class(self.request.GET, queryset=self.get_queryset())
+        object_list = user_traffic_filter.qs
+
+        return super().get_context_data(
+            user_traffic_filter=user_traffic_filter,
+            object_list=object_list,
+            *args, **kwargs
+        )
+
+
+class UserClickTrackerListView(EnsureCsrfCookieMixin, LoginRequiredMixin, ListView):
+    template_name = 'user-clicks.html'
+    model = UserClickTracker
+    paginate_by = 50
+    ordering = ('-created_at',)
+    filter_class = UserClickFilter
+
+    def get_context_data(self, *args, **kwargs):
+        user_click_traffic_filter = self.filter_class(self.request.GET, queryset=self.get_queryset())
+        object_list = user_click_traffic_filter.qs
+
+        return super().get_context_data(
+            user_click_traffic_filter=user_click_traffic_filter,
+            object_list=object_list,
+            *args, **kwargs
+        )
 
 
 class LoginView(EnsureCsrfCookieMixin, View):

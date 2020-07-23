@@ -1,0 +1,11 @@
+<nav class="uk-navbar-container" uk-navbar>
+    <div class="uk-navbar-right">
+        <ul class="uk-navbar-nav">
+            {% with request.resolver_match.url_name as url_name %}
+                <li><a href="{% url 'index' %}" class="{% if url_name == 'index' %}active{% endif %}" >Трекер траффика</a></li>
+                <li><a href="{% url 'user_clicks' %}" class="{% if url_name == 'user_clicks' %}active{% endif %}">Трекер кликов</a></li>
+                <li><a href="{% url 'logout' %}">Выход</a></li>
+            {% endwith %}
+        </ul>
+    </div>
+</nav>
