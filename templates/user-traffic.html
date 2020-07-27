@@ -14,24 +14,32 @@
 
     <main role="main" style="padding-top: 25px; padding-bottom: 25px;">
         <div class="uk-container">
-            <form action='' method='get' name='source' class="uk-grid uk-child-width-1-4 uk-form" uk-grid>
+            <form action='' method='get' class="uk-grid uk-child-width-1-5 uk-form"
+                  id="user_traffic_filter_form" uk-grid>
                 <div>
                     SOURCE
-                    {% render_field user_traffic_filter.form.source onchange='{ this.form.submit(); }' class='uk-select' %}
+                    {% render_field user_traffic_filter.form.source class='uk-select' %}
 
                 </div>
                 <div>
                     BALANCE_FILLED
-                    {% render_field user_traffic_filter.form.balance_filled onchange='{ this.form.submit(); }' class='uk-select' %}
+                    {% render_field user_traffic_filter.form.balance_filled class='uk-select' %}
 
                 </div>
                 <div>
                     CREATED_AT
-                    {% render_field user_traffic_filter.form.created_at onchange='{ this.form.submit(); }' class='uk-input datetime-picker' data-date-format="yyyy-mm-dd"  data-time-format='hh:ii' autocomplete='off' %}
+                    {% render_field user_traffic_filter.form.created_at hidden="True" %}
+                    <input type="text" name="created_at_input" class='uk-input datetime-picker' id="created_at_input"
+                           data-date-format="yyyy-mm-dd" data-time-format='hh:ii' autocomplete='off'>
                 </div>
                 <div>
                     UPDATED_AT
-                    {% render_field user_traffic_filter.form.updated_at onchange='{ this.form.submit(); }' class='uk-input datetime-picker' data-date-format="yyyy-mm-dd"  data-time-format='hh:ii' autocomplete='off' %}
+                    {% render_field user_traffic_filter.form.updated_at hidden="True" %}
+                    <input type="text" name="updated_at_input" class='uk-input datetime-picker' id="updated_at_input"
+                           data-date-format="yyyy-mm-dd" data-time-format='hh:ii' autocomplete='off'>
+                </div>
+                <div>
+                    <button type="submit" class="uk-button uk-button-default" style="margin-top: 23px">Отправить</button>
                 </div>
             </form>
 
@@ -76,11 +84,42 @@
 
 {% block js %}
     <script src="{% static 'js/datepicker.min.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.0/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.14/moment-timezone-with-data.min.js"></script>
 
     <script type="text/javascript">
         $('.datetime-picker').datepicker({
             timepicker: true,
             language: 'ru',
         });
+
+        $("#user_traffic_filter_form").submit(function (e) {
+            e.preventDefault();
+
+            const createdAtPickerValue = $(this).find('#created_at_input').val();
+            const updatedAtPickerValue = $(this).find('#updated_at_input').val();
+
+            var newCreateAtDate = '',
+                newUpdatedAtDate = '';
+
+            if (createdAtPickerValue) {
+                newCreateAtDate = toTimeZone(createdAtPickerValue, "Europe/Moscow");
+            }
+
+            if (newUpdatedAtDate) {
+                newUpdatedAtDate = toTimeZone(updatedAtPickerValue, "Europe/Moscow");
+            }
+
+            $(this).find('#id_created_at').val(newCreateAtDate);
+            $(this).find('#id_updated_at').val(newUpdatedAtDate);
+            this.submit()
+        });
+
+
+        function toTimeZone(time, zone) {
+            const format = 'YYYY-MM-DD HH:mm';
+            return moment(time, format).tz(zone).format(format);
+        }
+
     </script>
 {% endblock %}
